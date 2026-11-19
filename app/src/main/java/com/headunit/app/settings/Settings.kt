@@ -29,8 +29,6 @@ data class Settings(
     /** Aparelhos conhecidos, por endereço Bluetooth. */
     val devices: Map<String, KnownDevice> = emptyMap(),
     val logoKind: LogoKind = LogoKind.DEFAULT,
-    /** Texto do logo padrão. */
-    val logoText: String = "HR-V",
     /** Tempo do logo na tela (vídeos tocam até o fim, no máximo 15 s). */
     val logoSeconds: Int = 3,
     /** Mostrar o logo também quando a ignição liga (além de quando o app inicia). */

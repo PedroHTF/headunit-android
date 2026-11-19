@@ -136,7 +136,6 @@ fun HeadUnitApp(container: AppContainer) {
                 kind = settings.logoKind,
                 file = container.logo.file,
                 version = logoVersion,
-                text = settings.logoText,
                 seconds = settings.logoSeconds,
                 onFinished = { splash = false },
             )

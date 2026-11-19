@@ -44,7 +44,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.headunit.app.AppContainer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
@@ -306,7 +305,7 @@ private fun LogoSettings(container: AppContainer, onPreview: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.width(213.dp).height(120.dp).clip(RoundedCornerShape(12.dp))) {
             when (settings.logoKind) {
-                LogoKind.DEFAULT -> DefaultLogo(settings.logoText, Modifier.fillMaxSize(), animate = false)
+                LogoKind.DEFAULT -> DefaultLogo(Modifier.fillMaxSize(), animate = false)
                 LogoKind.IMAGE -> PreviewLabel("Imagem personalizada")
                 LogoKind.VIDEO -> PreviewLabel("Vídeo personalizado")
             }
@@ -344,15 +343,6 @@ private fun LogoSettings(container: AppContainer, onPreview: () -> Unit) {
                 import(c.uri, c.isVideo)
             }
         }
-    }
-    if (settings.logoKind == LogoKind.DEFAULT) {
-        OutlinedTextField(
-            value = settings.logoText,
-            onValueChange = { v -> container.settings.update { it.copy(logoText = v.take(12)) } },
-            label = { Text("Texto do logo padrão") },
-            singleLine = true,
-            modifier = Modifier.padding(top = 8.dp),
-        )
     }
     Text("Tempo na tela: ${settings.logoSeconds} s", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
     Slider(

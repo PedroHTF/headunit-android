@@ -72,7 +72,8 @@ aba **Actions** → execução mais recente → **Artifacts** → `headunit-debu
 
 ![Logo padrão (prévia)](docs/img/logo-padrao.png)
 
-Logo padrão: símbolo original de raios em terracota com o texto "HR-V" (o texto é editável).
+Logo padrão: "HR-V" cromado com o reflexo em terracota, fundo preto e um asterisco no fim
+(imagem gerada por `tools/make_logo.py`; dá para ajustar e gerar de novo).
 Aparece ao iniciar e, opcionalmente, ao ligar a ignição; toque para pular. Para trocar por uma
 imagem ou vídeo próprio, veja [docs/pendrive.md](docs/pendrive.md).
 

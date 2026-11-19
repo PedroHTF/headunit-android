@@ -36,7 +36,7 @@ PENDRIVE/
 2. Na central: **Configurações → Logo de inicialização → Procurar no pendrive** e toque no
    arquivo encontrado. (Ou **Escolher arquivo** para pegar de qualquer lugar.)
 3. O arquivo é copiado para a central: depois o pendrive pode ser removido.
-4. **Usar logo padrão** volta ao logo do app. O texto do logo padrão (ex.: "HR-V") pode ser trocado.
+4. **Usar logo padrão** volta ao logo do app ("HR-V" cromado com reflexo em terracota).
 
 > Este é o logo que o **app** mostra ao iniciar e ao ligar a ignição. A animação de boot do
 > próprio Android (antes do app abrir) só pode ser trocada numa ROM modificada.

@@ -29,7 +29,6 @@ class SettingsRepository(context: Context) {
             .mapNotNull(::decodeDevice)
             .associateBy { it.address },
         logoKind = runCatching { LogoKind.valueOf(prefs.getString(LOGO_KIND, null) ?: "") }.getOrDefault(LogoKind.DEFAULT),
-        logoText = prefs.getString(LOGO_TEXT, null) ?: "HR-V",
         logoSeconds = prefs.getInt(LOGO_SECONDS, 3),
         logoOnIgnition = prefs.getBoolean(LOGO_ON_IGNITION, true),
     )
@@ -44,7 +43,6 @@ class SettingsRepository(context: Context) {
             .putString(LAST_DEVICE, s.lastDeviceAddress)
             .putStringSet(DEVICES, s.devices.values.map(::encodeDevice).toSet())
             .putString(LOGO_KIND, s.logoKind.name)
-            .putString(LOGO_TEXT, s.logoText)
             .putInt(LOGO_SECONDS, s.logoSeconds)
             .putBoolean(LOGO_ON_IGNITION, s.logoOnIgnition)
             .apply()
@@ -59,7 +57,6 @@ class SettingsRepository(context: Context) {
         const val LAST_DEVICE = "last_device"
         const val DEVICES = "devices"
         const val LOGO_KIND = "logo_kind"
-        const val LOGO_TEXT = "logo_text"
         const val LOGO_SECONDS = "logo_seconds"
         const val LOGO_ON_IGNITION = "logo_on_ignition"
         const val SEP = "\t"
