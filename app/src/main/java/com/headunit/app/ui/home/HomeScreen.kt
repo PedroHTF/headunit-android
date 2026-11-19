@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.PhoneIphone
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
@@ -29,23 +31,33 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.headunit.app.AppContainer
 import com.headunit.app.AudioSource
+import com.headunit.app.settings.ProjectionMode
 import com.headunit.app.ui.Screen
 import com.headunit.core.hal.vehicle.SteeringKey
 
 @Composable
 fun HomeScreen(container: AppContainer, onNavigate: (Screen) -> Unit) {
     Row(Modifier.fillMaxSize().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-        NowPlayingCard(container, Modifier.weight(1.2f).fillMaxHeight())
-        Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            listOf(Screen.MEDIA to Screen.RADIO, Screen.VEHICLE to Screen.APPS).forEach { (a, b) ->
-                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Tile(a, Modifier.weight(1f).fillMaxHeight()) { onNavigate(a) }
-                    Tile(b, Modifier.weight(1f).fillMaxHeight()) { onNavigate(b) }
+        NowPlayingCard(container, Modifier.weight(1f).fillMaxHeight())
+        Column(Modifier.weight(1.3f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Tile("Android Auto", Icons.Filled.PhoneAndroid, Modifier.weight(1f).fillMaxHeight()) {
+                    container.openProjection(ProjectionMode.ANDROID_AUTO)
+                }
+                Tile("CarPlay", Icons.Filled.PhoneIphone, Modifier.weight(1f).fillMaxHeight()) {
+                    container.openProjection(ProjectionMode.CARPLAY)
+                }
+            }
+            listOf(Screen.MEDIA to Screen.RADIO, Screen.APPS to Screen.SETTINGS).forEach { (a, b) ->
+                Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Tile(a.label, a.icon, Modifier.weight(1f).fillMaxHeight()) { onNavigate(a) }
+                    Tile(b.label, b.icon, Modifier.weight(1f).fillMaxHeight()) { onNavigate(b) }
                 }
             }
         }
@@ -53,15 +65,15 @@ fun HomeScreen(container: AppContainer, onNavigate: (Screen) -> Unit) {
 }
 
 @Composable
-private fun Tile(screen: Screen, modifier: Modifier, onClick: () -> Unit) {
+private fun Tile(label: String, icon: ImageVector, modifier: Modifier, onClick: () -> Unit) {
     Box(
         modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.surfaceVariant).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(screen.icon, contentDescription = null, modifier = Modifier.size(56.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.height(8.dp))
-            Text(screen.label, style = MaterialTheme.typography.titleLarge)
+            Icon(icon, contentDescription = null, modifier = Modifier.size(44.dp), tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.height(6.dp))
+            Text(label, style = MaterialTheme.typography.titleMedium)
         }
     }
 }

@@ -15,6 +15,11 @@ class DrivingRulesTest {
     }
 
     @Test
+    fun videoAllowedAtAnySpeedWhenUserEnables() {
+        assertTrue(DrivingRules.isVideoAllowed(VehicleState(speedKmh = 120f), allowWhileDriving = true))
+    }
+
+    @Test
     fun reverseCameraOnlyInReverseWithPower() {
         assertTrue(DrivingRules.shouldShowReverseCamera(VehicleState(gear = Gear.REVERSE)))
         assertFalse(DrivingRules.shouldShowReverseCamera(VehicleState(gear = Gear.DRIVE)))

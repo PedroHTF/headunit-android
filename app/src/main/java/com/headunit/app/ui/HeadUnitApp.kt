@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material.icons.filled.Radio
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
@@ -39,6 +40,7 @@ import com.headunit.app.ui.apps.AppsScreen
 import com.headunit.app.ui.camera.PowerOffOverlay
 import com.headunit.app.ui.camera.ReverseCameraOverlay
 import com.headunit.app.ui.home.HomeScreen
+import com.headunit.app.ui.settings.SettingsScreen
 import com.headunit.app.ui.vehicle.VehicleScreen
 import com.headunit.core.hal.DrivingRules
 import com.headunit.core.hal.vehicle.Ignition
@@ -54,12 +56,14 @@ enum class Screen(val label: String, val icon: ImageVector) {
     RADIO("Rádio", Icons.Filled.Radio),
     VEHICLE("Veículo", Icons.Filled.DirectionsCar),
     APPS("Apps", Icons.Filled.Apps),
+    SETTINGS("Config.", Icons.Filled.Settings),
 }
 
 @Composable
 fun HeadUnitApp(container: AppContainer) {
     val vehicle by container.vehicleState.collectAsStateWithLifecycle()
     val hal by container.vehicleHal.collectAsStateWithLifecycle()
+    val settings by container.settings.settings.collectAsStateWithLifecycle()
     var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -82,12 +86,13 @@ fun HeadUnitApp(container: AppContainer) {
                         Screen.HOME -> HomeScreen(container, onNavigate = { screen = it })
                         Screen.MEDIA -> MediaScreen(
                             connection = container.player,
-                            videoAllowed = DrivingRules.isVideoAllowed(vehicle),
+                            videoAllowed = DrivingRules.isVideoAllowed(vehicle, settings.videoWhileDriving),
                             onPlaybackStarted = container::onMediaStarted,
                         )
                         Screen.RADIO -> RadioScreen(container.radio, onPowerOn = container::onRadioStarted)
                         Screen.VEHICLE -> VehicleScreen(container)
                         Screen.APPS -> AppsScreen()
+                        Screen.SETTINGS -> SettingsScreen(container)
                     }
                 }
             }

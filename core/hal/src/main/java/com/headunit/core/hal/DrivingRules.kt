@@ -8,7 +8,11 @@ object DrivingRules {
     /** Acima desta velocidade o vídeo é ocultado (o áudio continua). */
     const val VIDEO_SPEED_LIMIT_KMH = 5f
 
-    fun isVideoAllowed(state: VehicleState): Boolean = state.speedKmh < VIDEO_SPEED_LIMIT_KMH
+    /**
+     * @param allowWhileDriving configuração do usuário "vídeo em qualquer velocidade".
+     */
+    fun isVideoAllowed(state: VehicleState, allowWhileDriving: Boolean = false): Boolean =
+        allowWhileDriving || state.speedKmh < VIDEO_SPEED_LIMIT_KMH
 
     fun shouldShowReverseCamera(state: VehicleState): Boolean =
         state.ignition.isPowered && state.gear == Gear.REVERSE

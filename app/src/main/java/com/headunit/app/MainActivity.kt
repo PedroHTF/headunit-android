@@ -1,6 +1,8 @@
 package com.headunit.app
 
+import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
@@ -22,6 +24,8 @@ class MainActivity : ComponentActivity() {
         if (granted) container.restartVehicleHal()
     }
 
+    private val bluetoothPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         hideSystemBars()
@@ -29,6 +33,12 @@ class MainActivity : ComponentActivity() {
             ContextCompat.checkSelfPermission(this, CAR_SPEED) != PackageManager.PERMISSION_GRANTED
         ) {
             speedPermission.launch(CAR_SPEED)
+        }
+        // Para reconhecer o celular que conecta e abrir Android Auto / CarPlay sozinho.
+        if (container.settings.settings.value.autoOpenOnBluetooth && !container.bluetooth.hasPermission() &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+        ) {
+            bluetoothPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
         }
         setContent {
             HeadUnitTheme {

@@ -3,6 +3,12 @@ package com.headunit.app
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import com.headunit.app.projection.AutoLaunchPolicy
+import com.headunit.app.projection.BluetoothMonitor
+import com.headunit.app.projection.BtDevice
+import com.headunit.app.projection.ProjectionLauncher
+import com.headunit.app.settings.ProjectionMode
+import com.headunit.app.settings.SettingsRepository
 import com.headunit.core.hal.radio.RadioHal
 import com.headunit.core.hal.radio.SimulatedRadioHal
 import com.headunit.core.hal.vehicle.CarApiVehicleHal
@@ -14,6 +20,7 @@ import com.headunit.feature.media.PlayerConnection
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -52,6 +59,11 @@ class AppContainer(private val context: Context) {
     val radio: RadioHal = SimulatedRadioHal(scope)
     val player = PlayerConnection(context)
 
+    val settings = SettingsRepository(context)
+    val projection = ProjectionLauncher(context, settings)
+    private val autoLaunch = AutoLaunchPolicy()
+    val bluetooth = BluetoothMonitor(context, ::onBluetoothConnected)
+
     private val _audioSource = MutableStateFlow(AudioSource.NONE)
     val audioSource: StateFlow<AudioSource> = _audioSource.asStateFlow()
 
@@ -65,6 +77,7 @@ class AppContainer(private val context: Context) {
     init {
         _vehicleHal.value.start()
         player.connect()
+        bluetooth.start()
 
         // Botões do volante vindos da HAL (simulador ou, no futuro, o MCU).
         scope.launch { _vehicleHal.flatMapLatest { it.keys }.collect(::handleSteeringKey) }
@@ -75,6 +88,7 @@ class AppContainer(private val context: Context) {
                 if (!powered) {
                     player.pause()
                     radio.powerOff()
+                    autoLaunch.onPowerCycle() // a próxima partida pode abrir a projeção de novo
                 }
             }
         }
@@ -89,6 +103,34 @@ class AppContainer(private val context: Context) {
         val hal = createVehicleHal()
         hal.start()
         _vehicleHal.value = hal
+    }
+
+    /**
+     * Abre Android Auto / CarPlay. Se há um celular conectado no Bluetooth, ele passa a ser
+     * "o último aparelho" desse modo, e nas próximas partidas a projeção abre sozinha.
+     */
+    fun openProjection(mode: ProjectionMode) {
+        bluetooth.connected.value.lastOrNull()?.let { device ->
+            settings.update { it.rememberDevice(device.address, device.name, mode) }
+        }
+        autoLaunch.onManualLaunch()
+        player.pause()
+        radio.powerOff()
+        projection.launch(mode)
+    }
+
+    /** Nova "partida" simulada: libera a abertura automática de novo. */
+    fun resetAutoLaunch() = autoLaunch.onPowerCycle()
+
+    private fun onBluetoothConnected(device: BtDevice) {
+        val mode = autoLaunch.decide(settings.settings.value, device) ?: return
+        scope.launch {
+            delay(AUTO_LAUNCH_DELAY_MS) // dá tempo do celular terminar de conectar
+            settings.update { it.rememberDevice(device.address, device.name, mode) }
+            player.pause()
+            radio.powerOff()
+            projection.launch(mode)
+        }
     }
 
     fun onMediaStarted() {
@@ -131,5 +173,6 @@ class AppContainer(private val context: Context) {
 
     private companion object {
         const val KEY_FORCE_SIM = "force_simulation"
+        const val AUTO_LAUNCH_DELAY_MS = 2_000L
     }
 }
