@@ -86,6 +86,9 @@ fun MediaScreen(
     videoAllowed: Boolean,
     onPlaybackStarted: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Substitui a leitura do MediaStore (usado nos testes de tela). */
+    loadItems: (suspend () -> List<LocalMedia>)? = null,
+    initialTab: Int = 0,
 ) {
     val context = LocalContext.current
     val repository = remember { MediaRepository(context.applicationContext) }
@@ -95,16 +98,16 @@ fun MediaScreen(
         ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED
     }
 
-    var granted by remember { mutableStateOf(hasPermission()) }
+    var granted by remember { mutableStateOf(loadItems != null || hasPermission()) }
     var items by remember { mutableStateOf<List<LocalMedia>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var tab by rememberSaveable { mutableIntStateOf(initialTab) }
 
     fun reload() {
         if (!granted) return
         scope.launch {
             loading = true
-            items = runCatching { repository.load() }.getOrDefault(emptyList())
+            items = runCatching { loadItems?.invoke() ?: repository.load() }.getOrDefault(emptyList())
             loading = false
         }
     }

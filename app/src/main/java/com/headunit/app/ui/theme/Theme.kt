@@ -1,8 +1,10 @@
 package com.headunit.app.ui.theme
 
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 
 private val Colors = darkColorScheme(
@@ -20,5 +22,8 @@ private val Colors = darkColorScheme(
 /** Tema escuro fixo: no carro, à noite, tela clara ofusca. */
 @Composable
 fun HeadUnitTheme(content: @Composable () -> Unit) {
-    MaterialTheme(colorScheme = Colors, content = content)
+    MaterialTheme(colorScheme = Colors) {
+        // Sem isto, textos fora de um Surface saem pretos sobre o fundo escuro.
+        CompositionLocalProvider(LocalContentColor provides Colors.onBackground, content = content)
+    }
 }

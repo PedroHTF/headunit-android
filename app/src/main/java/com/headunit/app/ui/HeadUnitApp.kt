@@ -63,15 +63,21 @@ enum class Screen(val label: String, val icon: ImageVector) {
 }
 
 @Composable
-fun HeadUnitApp(container: AppContainer) {
+fun HeadUnitApp(
+    container: AppContainer,
+    initialScreen: Screen = Screen.HOME,
+    showSplashOnStart: Boolean = true,
+    openCameraSetup: Boolean = false,
+    initialMediaTab: Int = 0,
+) {
     val vehicle by container.vehicleState.collectAsStateWithLifecycle()
     val hal by container.vehicleHal.collectAsStateWithLifecycle()
     val settings by container.settings.settings.collectAsStateWithLifecycle()
     val camera by container.camera.config.collectAsStateWithLifecycle()
-    var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
-    var cameraSetup by rememberSaveable { mutableStateOf(false) }
+    var screen by rememberSaveable { mutableStateOf(initialScreen) }
+    var cameraSetup by rememberSaveable { mutableStateOf(openCameraSetup) }
     // Logo: ao abrir o app e, se configurado, toda vez que a ignição liga.
-    var splash by rememberSaveable { mutableStateOf(true) }
+    var splash by rememberSaveable { mutableStateOf(showSplashOnStart) }
     var wasPowered by rememberSaveable { mutableStateOf(vehicle.ignition.isPowered) }
     LaunchedEffect(vehicle.ignition.isPowered) {
         val powered = vehicle.ignition.isPowered
@@ -100,6 +106,8 @@ fun HeadUnitApp(container: AppContainer) {
                         Screen.HOME -> HomeScreen(container, onNavigate = { screen = it })
                         Screen.MEDIA -> MediaScreen(
                             connection = container.player,
+                            loadItems = container.mediaSource,
+                            initialTab = initialMediaTab,
                             videoAllowed = DrivingRules.isVideoAllowed(vehicle, settings.videoWhileDriving),
                             onPlaybackStarted = container::onMediaStarted,
                         )

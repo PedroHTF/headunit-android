@@ -42,7 +42,11 @@ enum class AudioSource(val label: String) { NONE("—"), MEDIA("Mídia"), RADIO(
  * Aqui se decide qual HAL usar: Android Automotive ou simulada.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
-class AppContainer(private val context: Context) {
+class AppContainer(
+    private val context: Context,
+    /** Falso nos testes de tela: lá não há serviço de mídia. */
+    connectPlayer: Boolean = true,
+) {
     private val scope: CoroutineScope = MainScope()
     private val prefs = context.getSharedPreferences("headunit", Context.MODE_PRIVATE)
     private val audioManager = context.getSystemService(AudioManager::class.java)
@@ -61,6 +65,9 @@ class AppContainer(private val context: Context) {
 
     val radio: RadioHal = SimulatedRadioHal(scope)
     val player = PlayerConnection(context)
+
+    /** De onde vêm as músicas/vídeos (trocável nos testes de tela). */
+    var mediaSource: (suspend () -> List<com.headunit.feature.media.LocalMedia>)? = null
 
     val settings = SettingsRepository(context)
     val camera = CameraConfigRepository(context)
@@ -83,7 +90,7 @@ class AppContainer(private val context: Context) {
 
     init {
         _vehicleHal.value.start()
-        player.connect()
+        if (connectPlayer) player.connect()
         bluetooth.start()
 
         // Botões do volante vindos da HAL (simulador ou, no futuro, o MCU).
