@@ -23,6 +23,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
@@ -119,6 +121,8 @@ fun MediaScreen(
     }
 
     val visible = items.filter { it.isVideo == (tab == 1) }
+    var folderVolume by rememberSaveable { mutableStateOf<String?>(null) }
+    var folderPath by rememberSaveable { mutableStateOf("") }
 
     Row(modifier.fillMaxSize().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         // Lista
@@ -127,6 +131,7 @@ fun MediaScreen(
                 TabRow(selectedTabIndex = tab, modifier = Modifier.weight(1f)) {
                     Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Músicas") })
                     Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Vídeos") })
+                    Tab(selected = tab == 2, onClick = { tab = 2 }, text = { Text("Pastas") })
                 }
                 IconButton(onClick = ::reload) { Icon(Icons.Filled.Refresh, contentDescription = "Atualizar") }
             }
@@ -137,6 +142,16 @@ fun MediaScreen(
                     action = "Permitir" to { permissionLauncher.launch(mediaPermissions) },
                 )
                 loading -> LinearProgressIndicator(Modifier.fillMaxWidth())
+                tab == 2 -> FolderBrowser(
+                    items = items,
+                    volumeId = folderVolume,
+                    path = folderPath,
+                    onNavigate = { v, p -> folderVolume = v; folderPath = p },
+                    onPlay = { list, index ->
+                        onPlaybackStarted()
+                        connection.play(list, index)
+                    },
+                )
                 visible.isEmpty() -> Placeholder(
                     "Nenhum arquivo encontrado.\n\nNo emulador: arraste arquivos MP3/MP4 para a janela " +
                         "e toque em atualizar. Veja docs/setup-windows.md para simular um pendrive.",
@@ -153,6 +168,78 @@ fun MediaScreen(
         }
         // Tocando agora
         NowPlayingPanel(connection, videoAllowed, Modifier.weight(1f).fillMaxHeight())
+    }
+}
+
+/**
+ * Navega pelos volumes (interno, pendrive) e pastas. Tocar num arquivo toca a pasta
+ * inteira a partir dele (músicas e vídeos misturados, como num pendrive no carro).
+ */
+@Composable
+private fun FolderBrowser(
+    items: List<LocalMedia>,
+    volumeId: String?,
+    path: String,
+    onNavigate: (String?, String) -> Unit,
+    onPlay: (List<LocalMedia>, Int) -> Unit,
+) {
+    val volumes = items.groupBy { it.volumeId }
+    if (volumeId == null || volumeId !in volumes) {
+        if (volumes.isEmpty()) {
+            Placeholder("Nenhuma pasta com músicas ou vídeos.")
+            return
+        }
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            volumes.forEach { (id, list) ->
+                item(key = "vol-$id") {
+                    FolderRow(Icons.Filled.Usb, list.first().volume + " (" + id + ")", "${list.size} arquivos") { onNavigate(id, "") }
+                }
+            }
+        }
+        return
+    }
+    val inVolume = volumes.getValue(volumeId)
+    val folders = inVolume.map { it.folder }
+    val subfolders = FolderTree.subfolders(folders, path)
+    val files = inVolume.filter { it.folder == path }.sortedBy { it.title.lowercase() }
+    val crumbs = (listOf(inVolume.first().volume) + path.split('/').filter { it.isNotEmpty() }).joinToString("  ›  ")
+
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = {
+                val parent = FolderTree.parent(path)
+                if (parent == null) onNavigate(null, "") else onNavigate(volumeId, parent)
+            }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar") }
+            Text(crumbs, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            itemsIndexed(subfolders, key = { _, f -> "dir-$f" }) { _, name ->
+                val full = FolderTree.join(path, name)
+                FolderRow(Icons.Filled.Folder, name, "${FolderTree.countUnder(folders, full)} arquivos") { onNavigate(volumeId, full) }
+            }
+            itemsIndexed(files, key = { _, m -> m.uri.toString() }) { index, media ->
+                MediaRow(media) { onPlay(files, index) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FolderRow(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.titleMedium)
+            Text(subtitle, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 

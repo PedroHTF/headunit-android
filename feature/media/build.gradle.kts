@@ -35,4 +35,6 @@ dependencies {
     api(libs.media3.session)
     implementation(libs.media3.ui)
     implementation(libs.kotlinx.coroutines.android)
+
+    testImplementation(libs.junit)
 }

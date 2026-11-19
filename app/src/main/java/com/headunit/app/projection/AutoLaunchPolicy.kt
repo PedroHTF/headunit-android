@@ -5,58 +5,50 @@ import com.headunit.app.settings.Settings
 
 data class BtDevice(val address: String, val name: String)
 
+/** O que fazer quando um celular conecta no Bluetooth. */
+sealed interface ConnectAction {
+    /** Abrir a projeção sozinho (primeira conexão da viagem). */
+    data class AutoOpen(val mode: ProjectionMode) : ConnectAction
+    /** Só sugerir: aparece um aviso e alguém precisa tocar para abrir. */
+    data class Suggest(val device: BtDevice, val mode: ProjectionMode) : ConnectAction
+    data object Nothing : ConnectAction
+}
+
 /**
- * Decide se a projeção deve abrir sozinha quando um aparelho conecta no Bluetooth.
- *
  * Regras:
- *  - **Primeira conexão da viagem** (depois de ligar o carro): com "só o último aparelho",
- *    ignora outros celulares (ex.: o do passageiro que pareou uma vez).
- *  - **Durante a viagem** (com "trocar de celular na viagem" ligado): outro celular conhecido
- *    que conectar assume a projeção no modo dele. O mesmo celular reconectando também reabre,
- *    exceto em quedas rápidas (menos de [QUICK_RECONNECT_MS]), para não ficar piscando.
+ *  - Só a **primeira conexão da viagem** (depois de ligar o carro) abre sozinha.
+ *    Com "só o último aparelho", ignora outros celulares nessa hora.
+ *  - Depois disso, qualquer conexão (o mesmo celular voltando de uma queda, ou outro
+ *    celular) **não abre sozinha**: o app mostra um aviso e quem está no carro decide,
+ *    tocando no aviso ou no ícone Android Auto / CarPlay.
  *  - O modo vem do aparelho conhecido (aprendido ao tocar no ícone ou definido nas
  *    Configurações); sem isso, um nome com "iPhone" sugere CarPlay.
  */
-class AutoLaunchPolicy(private val clock: () -> Long = System::currentTimeMillis) {
-    private var launchedThisTrip = false
-    private var lastAddress: String? = null
-    private var lastAt = 0L
+class AutoLaunchPolicy {
+    private var openedThisTrip = false
 
     /** Chamar quando a ignição desliga: a próxima conexão é a "primeira da viagem". */
     fun onPowerCycle() {
-        launchedThisTrip = false
-        lastAddress = null
+        openedThisTrip = false
     }
 
-    /** Chamar quando o usuário abre a projeção manualmente. */
-    fun onManualLaunch(device: BtDevice?) = record(device?.address)
+    /** Chamar quando alguém abre a projeção manualmente. */
+    fun onManualLaunch() {
+        openedThisTrip = true
+    }
 
-    fun decide(settings: Settings, device: BtDevice): ProjectionMode? {
-        if (!settings.autoOpenOnBluetooth) return null
-        val mode = settings.devices[device.address]?.mode ?: guessFromName(device.name) ?: return null
-
-        if (!launchedThisTrip) {
-            val last = settings.lastDeviceAddress
-            if (settings.onlyLastDevice && last != null && !last.equals(device.address, ignoreCase = true)) return null
-        } else {
-            if (!settings.switchPhoneMidTrip) return null
-            val quickReconnect = device.address.equals(lastAddress, ignoreCase = true) &&
-                clock() - lastAt < QUICK_RECONNECT_MS
-            if (quickReconnect) return null
+    fun decide(settings: Settings, device: BtDevice): ConnectAction {
+        val mode = settings.devices[device.address]?.mode ?: guessFromName(device.name) ?: return ConnectAction.Nothing
+        if (openedThisTrip || !settings.autoOpenOnBluetooth) return ConnectAction.Suggest(device, mode)
+        val last = settings.lastDeviceAddress
+        if (settings.onlyLastDevice && last != null && !last.equals(device.address, ignoreCase = true)) {
+            return ConnectAction.Suggest(device, mode)
         }
-        record(device.address)
-        return mode
-    }
-
-    private fun record(address: String?) {
-        launchedThisTrip = true
-        lastAddress = address
-        lastAt = clock()
+        openedThisTrip = true
+        return ConnectAction.AutoOpen(mode)
     }
 
     companion object {
-        const val QUICK_RECONNECT_MS = 60_000L
-
         fun guessFromName(name: String): ProjectionMode? {
             val n = name.lowercase()
             return if ("iphone" in n || "ipad" in n) ProjectionMode.CARPLAY else null

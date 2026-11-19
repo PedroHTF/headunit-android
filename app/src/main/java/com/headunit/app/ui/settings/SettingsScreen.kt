@@ -42,13 +42,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.headunit.app.AppContainer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
+import com.headunit.app.logo.DefaultLogo
+import com.headunit.app.logo.LogoCandidate
+import com.headunit.app.settings.LogoKind
+import kotlinx.coroutines.launch
 import com.headunit.app.projection.AppEntry
 import com.headunit.app.projection.BtDevice
 import com.headunit.app.settings.LaunchTarget
 import com.headunit.app.settings.ProjectionMode
 
 @Composable
-fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit) {
+fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit, onPreviewLogo: () -> Unit) {
     val settings by container.settings.settings.collectAsStateWithLifecycle()
     val connected by container.bluetooth.connected.collectAsStateWithLifecycle()
     var btGranted by remember { mutableStateOf(container.bluetooth.hasPermission()) }
@@ -73,6 +83,10 @@ fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit) {
                 checked = settings.videoWhileDriving,
                 onChange = { v -> container.settings.update { it.copy(videoWhileDriving = v) } },
             )
+        }
+
+        Section("Logo de inicialização") {
+            LogoSettings(container, onPreviewLogo)
         }
 
         Section("Câmera de ré") {
@@ -112,16 +126,10 @@ fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit) {
         Section("Abrir automaticamente pelo Bluetooth") {
             SwitchRow(
                 title = "Abrir ao conectar o celular",
-                subtitle = "Quando um celular conhecido conecta no Bluetooth, abre o modo dele (Android Auto ou CarPlay).",
+                subtitle = "Só na primeira conexão depois de ligar o carro. Conexões no meio da viagem " +
+                    "(queda e volta, ou outro celular) mostram um aviso: é preciso tocar para abrir.",
                 checked = settings.autoOpenOnBluetooth,
                 onChange = { v -> container.settings.update { it.copy(autoOpenOnBluetooth = v) } },
-            )
-            SwitchRow(
-                title = "Trocar de celular durante a viagem",
-                subtitle = "Se outro celular conhecido conectar no meio da viagem, ele assume a projeção. " +
-                    "O mesmo celular reconectando também reabre, exceto em quedas de menos de 1 minuto.",
-                checked = settings.switchPhoneMidTrip,
-                onChange = { v -> container.settings.update { it.copy(switchPhoneMidTrip = v) } },
             )
             SwitchRow(
                 title = "Ao ligar o carro, só o último aparelho",
@@ -182,7 +190,7 @@ fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit) {
                 OutlinedButton(onClick = {
                     SIMULATED.forEach(container.bluetooth::deviceDisconnected)
                 }) { Text("Desconectar simulados") }
-                OutlinedButton(onClick = container::resetAutoLaunch) { Text("Nova partida") }
+                OutlinedButton(onClick = container::resetAutoLaunch) { Text("Nova partida (ligar o carro)") }
             }
         }
     }
@@ -268,6 +276,103 @@ private fun SwitchRow(title: String, subtitle: String, checked: Boolean, onChang
             Text(subtitle, style = MaterialTheme.typography.bodySmall)
         }
         Switch(checked = checked, onCheckedChange = onChange)
+    }
+}
+
+@Composable
+private fun LogoSettings(container: AppContainer, onPreview: () -> Unit) {
+    val settings by container.settings.settings.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var candidates by remember { mutableStateOf<List<LogoCandidate>?>(null) }
+    var message by remember { mutableStateOf<String?>(null) }
+
+    fun import(uri: android.net.Uri, isVideo: Boolean) = scope.launch {
+        message = if (container.logo.import(uri, isVideo)) "Logo atualizado." else "Não foi possível ler o arquivo."
+        candidates = null
+    }
+
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) import(uri, context.contentResolver.getType(uri)?.startsWith("video") == true)
+    }
+    val scan = {
+        scope.launch {
+            candidates = container.logo.findCandidates()
+            if (candidates.isNullOrEmpty()) message = "Nenhum HeadUnit/logo.* encontrado."
+        }
+    }
+    val readPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { scan() }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.width(213.dp).height(120.dp).clip(RoundedCornerShape(12.dp))) {
+            when (settings.logoKind) {
+                LogoKind.DEFAULT -> DefaultLogo(settings.logoText, Modifier.fillMaxSize(), animate = false)
+                LogoKind.IMAGE -> PreviewLabel("Imagem personalizada")
+                LogoKind.VIDEO -> PreviewLabel("Vídeo personalizado")
+            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "No pendrive, crie a pasta HeadUnit e coloque logo.png, logo.jpg ou logo.mp4. " +
+                    "O arquivo é copiado para a central: depois o pendrive pode sair.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = {
+                    val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VIDEO)
+                    } else {
+                        arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+                    }
+                    readPermission.launch(perms)
+                }) { Text("Procurar no pendrive") }
+                OutlinedButton(onClick = { picker.launch(arrayOf("image/*", "video/*")) }) { Text("Escolher arquivo") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onPreview) { Text("Ver agora") }
+                if (settings.logoKind != LogoKind.DEFAULT) {
+                    TextButton(onClick = container.logo::useDefault) { Text("Usar logo padrão") }
+                }
+            }
+            message?.let { Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary) }
+        }
+    }
+    candidates?.takeIf { it.isNotEmpty() }?.let { list ->
+        Text("Encontrados:", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+        list.forEach { c ->
+            PickRow("${c.name}  ·  ${c.location}", if (c.isVideo) "Vídeo — toque para usar" else "Imagem — toque para usar") {
+                import(c.uri, c.isVideo)
+            }
+        }
+    }
+    if (settings.logoKind == LogoKind.DEFAULT) {
+        OutlinedTextField(
+            value = settings.logoText,
+            onValueChange = { v -> container.settings.update { it.copy(logoText = v.take(12)) } },
+            label = { Text("Texto do logo padrão") },
+            singleLine = true,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+    }
+    Text("Tempo na tela: ${settings.logoSeconds} s", style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 8.dp))
+    Slider(
+        value = settings.logoSeconds.toFloat(),
+        onValueChange = { v -> container.settings.update { it.copy(logoSeconds = v.toInt()) } },
+        valueRange = 1f..8f,
+        steps = 6,
+    )
+    SwitchRow(
+        title = "Mostrar ao ligar a ignição",
+        subtitle = "Além de quando o sistema inicia. Toque no logo para pular.",
+        checked = settings.logoOnIgnition,
+        onChange = { v -> container.settings.update { it.copy(logoOnIgnition = v) } },
+    )
+}
+
+@Composable
+private fun PreviewLabel(text: String) {
+    Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color.Black), contentAlignment = Alignment.Center) {
+        Text(text, color = androidx.compose.ui.graphics.Color.White, style = MaterialTheme.typography.labelLarge)
     }
 }
 

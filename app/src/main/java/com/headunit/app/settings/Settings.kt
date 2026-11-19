@@ -9,6 +9,9 @@ enum class ProjectionMode(val label: String) {
 /** App (e opcionalmente a tela específica) que um ícone de projeção abre. */
 data class LaunchTarget(val packageName: String, val activity: String? = null)
 
+/** Logo da inicialização: o padrão (desenhado pelo app) ou um arquivo do usuário. */
+enum class LogoKind { DEFAULT, IMAGE, VIDEO }
+
 /** Aparelho Bluetooth conhecido e o modo que ele usa. */
 data class KnownDevice(val address: String, val name: String, val mode: ProjectionMode)
 
@@ -22,11 +25,16 @@ data class Settings(
     val autoOpenOnBluetooth: Boolean = true,
     /** Na primeira conexão após ligar o carro, só abrir para o último aparelho usado. */
     val onlyLastDevice: Boolean = true,
-    /** Durante a viagem, outro celular que conectar assume a projeção no modo dele. */
-    val switchPhoneMidTrip: Boolean = true,
     val lastDeviceAddress: String? = null,
     /** Aparelhos conhecidos, por endereço Bluetooth. */
     val devices: Map<String, KnownDevice> = emptyMap(),
+    val logoKind: LogoKind = LogoKind.DEFAULT,
+    /** Texto do logo padrão. */
+    val logoText: String = "HR-V",
+    /** Tempo do logo na tela (vídeos tocam até o fim, no máximo 15 s). */
+    val logoSeconds: Int = 3,
+    /** Mostrar o logo também quando a ignição liga (além de quando o app inicia). */
+    val logoOnIgnition: Boolean = true,
 ) {
     fun target(mode: ProjectionMode): LaunchTarget? = when (mode) {
         ProjectionMode.ANDROID_AUTO -> androidAutoTarget

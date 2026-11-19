@@ -36,8 +36,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.headunit.app.AppContainer
+import com.headunit.app.logo.BootSplash
 import com.headunit.app.ui.apps.AppsScreen
 import com.headunit.app.ui.camera.CameraSetupScreen
+import com.headunit.app.ui.common.ConnectBanner
 import com.headunit.app.ui.camera.PowerOffOverlay
 import com.headunit.app.ui.camera.ReverseCameraOverlay
 import com.headunit.app.ui.home.HomeScreen
@@ -68,6 +70,15 @@ fun HeadUnitApp(container: AppContainer) {
     val camera by container.camera.config.collectAsStateWithLifecycle()
     var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
     var cameraSetup by rememberSaveable { mutableStateOf(false) }
+    // Logo: ao abrir o app e, se configurado, toda vez que a ignição liga.
+    var splash by rememberSaveable { mutableStateOf(true) }
+    var wasPowered by rememberSaveable { mutableStateOf(vehicle.ignition.isPowered) }
+    LaunchedEffect(vehicle.ignition.isPowered) {
+        val powered = vehicle.ignition.isPowered
+        if (powered && !wasPowered && settings.logoOnIgnition) splash = true
+        wasPowered = powered
+    }
+    val logoVersion by container.logo.version.collectAsStateWithLifecycle()
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(Modifier.fillMaxSize()) {
@@ -95,16 +106,40 @@ fun HeadUnitApp(container: AppContainer) {
                         Screen.RADIO -> RadioScreen(container.radio, onPowerOn = container::onRadioStarted)
                         Screen.VEHICLE -> VehicleScreen(container)
                         Screen.APPS -> AppsScreen()
-                        Screen.SETTINGS -> SettingsScreen(container, onOpenCameraSetup = { cameraSetup = true })
+                        Screen.SETTINGS -> SettingsScreen(
+                            container,
+                            onOpenCameraSetup = { cameraSetup = true },
+                            onPreviewLogo = { splash = true },
+                        )
                     }
                 }
             }
+        }
+
+        val suggestion by container.suggestion.collectAsStateWithLifecycle()
+        suggestion?.let { s ->
+            ConnectBanner(
+                suggestion = s,
+                onOpen = { container.openProjection(s.mode) },
+                onDismiss = container::dismissSuggestion,
+                modifier = Modifier.align(Alignment.TopCenter),
+            )
         }
 
         if (cameraSetup) {
             CameraSetupScreen(container, onClose = { cameraSetup = false })
         } else if (DrivingRules.shouldShowReverseCamera(vehicle)) {
             ReverseCameraOverlay(camera, vehicle.steeringWheelDeg)
+        }
+        if (splash && vehicle.ignition.isPowered && !DrivingRules.shouldShowReverseCamera(vehicle)) {
+            BootSplash(
+                kind = settings.logoKind,
+                file = container.logo.file,
+                version = logoVersion,
+                text = settings.logoText,
+                seconds = settings.logoSeconds,
+                onFinished = { splash = false },
+            )
         }
         if (!vehicle.ignition.isPowered) {
             PowerOffOverlay(

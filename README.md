@@ -16,6 +16,8 @@ próprio com mídia USB, rádio e integração com os dados do carro. Roda em:
 |---|---|
 | Launcher (pode ser a tela inicial) | ✅ |
 | Músicas e vídeos do armazenamento e de **pendrive USB** | ✅ real (MediaStore + ExoPlayer, toca em segundo plano) |
+| Navegação por **pastas** do pendrive (músicas e vídeos) | ✅ Mídia → Pastas ([como organizar](docs/pendrive.md)) |
+| **Logo de inicialização** animado, trocável por imagem/vídeo do pendrive | ✅ Configurações → Logo |
 | Vídeo bloqueado com o carro em movimento (> 5 km/h), desativável | ✅ |
 | Rádio FM/AM: sintonia, busca, memórias, RDS | 🟡 simulado (sem áudio) |
 | Marcha, ignição e velocidade | ✅ Android Automotive / 🟡 simulado nas demais |
@@ -24,7 +26,7 @@ próprio com mídia USB, rádio e integração com os dados do carro. Roda em:
 | Tela apagada com ACC desligado | ✅ |
 | Botões do volante (próxima, anterior, play, volume, fonte) | ✅ teclas de mídia / simulador |
 | Ícones **Android Auto** e **CarPlay** na tela inicial, abrindo o Zlink | ✅ (app/tela configuráveis) |
-| Abrir Android Auto/CarPlay sozinho ao conectar o celular no Bluetooth | ✅ inclusive trocando de celular na viagem |
+| Abrir Android Auto/CarPlay sozinho ao conectar o celular no Bluetooth | ✅ só na 1ª conexão da viagem; depois, aviso com botão |
 | Configurações (vídeo em qualquer velocidade, projeção, Bluetooth) | ✅ |
 | Abrir outros apps | ✅ tela "Apps" |
 | Bluetooth (chamadas, agenda) | ⏳ próximos passos |
@@ -53,9 +55,11 @@ aba **Actions** → execução mais recente → **Artifacts** → `headunit-debu
   chamado Zlink/Car Auto/CarLink). Em **Configurações** dá para escolher outro app e, se o Zlink
   tiver telas separadas para cada modo, a tela exata de cada ícone.
 - **Abertura automática:** com o celular conectado no Bluetooth, toque uma vez no ícone do modo
-  dele. O app guarda "este celular usa Android Auto" e passa a abrir sozinho na primeira conexão
-  Bluetooth depois de ligar o carro. Também dá para definir o modo de cada aparelho pareado.
-  Opção "só para o último aparelho usado" para ignorar o celular do passageiro.
+  dele. O app guarda "este celular usa Android Auto" e passa a abrir sozinho na **primeira
+  conexão Bluetooth depois de ligar o carro**. Também dá para definir o modo de cada aparelho.
+- **Durante a viagem** nada abre sozinho: se o celular cair e voltar, ou outro celular conectar,
+  aparece um aviso "Fulano conectou — Abrir Android Auto / Agora não". Quem está no carro decide
+  (no aviso ou nos ícones).
 - **No emulador:** em Configurações → Simulação, os botões "Conectar Android/iPhone (simulado)"
   disparam a mesma lógica. Escolha qualquer app (ex.: Configurações do Android) como alvo
   para ver a abertura acontecer.
@@ -63,6 +67,14 @@ aba **Actions** → execução mais recente → **Artifacts** → `headunit-debu
   à parte e o Android não vê a conexão; nesse caso vamos ouvir os avisos do app do fabricante.
   E o Android pode bloquear abrir outro app se o nosso não estiver na tela (normalmente estará,
   por ser a tela inicial).
+
+## Logo de inicialização
+
+![Logo padrão (prévia)](docs/img/logo-padrao.png)
+
+Logo padrão: símbolo original de raios em terracota com o texto "HR-V" (o texto é editável).
+Aparece ao iniciar e, opcionalmente, ao ligar a ignição; toque para pular. Para trocar por uma
+imagem ou vídeo próprio, veja [docs/pendrive.md](docs/pendrive.md).
 
 ## Câmera de ré
 

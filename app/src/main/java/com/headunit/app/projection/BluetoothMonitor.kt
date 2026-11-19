@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.update
 class BluetoothMonitor(
     private val context: Context,
     private val onConnected: (BtDevice) -> Unit,
+    private val onDisconnected: (BtDevice) -> Unit = {},
 ) {
     private val _connected = MutableStateFlow<List<BtDevice>>(emptyList())
     val connected: StateFlow<List<BtDevice>> = _connected.asStateFlow()
@@ -77,6 +78,7 @@ class BluetoothMonitor(
 
     fun deviceDisconnected(device: BtDevice) {
         _connected.update { list -> list.filterNot { it.address == device.address } }
+        onDisconnected(device)
     }
 
     @SuppressLint("MissingPermission")

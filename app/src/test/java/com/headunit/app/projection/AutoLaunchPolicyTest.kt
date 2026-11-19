@@ -3,7 +3,6 @@ package com.headunit.app.projection
 import com.headunit.app.settings.ProjectionMode
 import com.headunit.app.settings.Settings
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class AutoLaunchPolicyTest {
@@ -13,73 +12,63 @@ class AutoLaunchPolicyTest {
         .rememberDevice(iphone.address, iphone.name, ProjectionMode.CARPLAY)
         .rememberDevice(pixel.address, pixel.name, ProjectionMode.ANDROID_AUTO) // último = pixel
 
-    private var now = 0L
-    private fun policy() = AutoLaunchPolicy { now }
-
     @Test
-    fun opensLastDeviceOnFirstConnection() {
-        assertEquals(ProjectionMode.ANDROID_AUTO, policy().decide(known, pixel))
+    fun firstConnectionOfTripOpensAutomatically() {
+        assertEquals(ConnectAction.AutoOpen(ProjectionMode.ANDROID_AUTO), AutoLaunchPolicy().decide(known, pixel))
     }
 
     @Test
-    fun firstConnectionIgnoresOtherDevicesWhenOnlyLastDevice() {
-        assertNull(policy().decide(known, iphone))
-    }
-
-    @Test
-    fun switchingPhoneMidTripOpensItsMode() {
-        val p = policy()
+    fun reconnectionDuringTripOnlySuggests() {
+        val p = AutoLaunchPolicy()
         p.decide(known, pixel)
-        now += 5_000
-        assertEquals(ProjectionMode.CARPLAY, p.decide(known, iphone))
+        assertEquals(ConnectAction.Suggest(pixel, ProjectionMode.ANDROID_AUTO), p.decide(known, pixel))
     }
 
     @Test
-    fun quickReconnectOfSameDeviceIsIgnored() {
-        val p = policy()
+    fun otherPhoneDuringTripOnlySuggests() {
+        val p = AutoLaunchPolicy()
         p.decide(known, pixel)
-        now += 10_000
-        assertNull(p.decide(known, pixel))
+        assertEquals(ConnectAction.Suggest(iphone, ProjectionMode.CARPLAY), p.decide(known, iphone))
     }
 
     @Test
-    fun sameDeviceReopensAfterLongDisconnection() {
-        val p = policy()
+    fun newTripOpensAutomaticallyAgain() {
+        val p = AutoLaunchPolicy()
         p.decide(known, pixel)
-        now += AutoLaunchPolicy.QUICK_RECONNECT_MS + 1
-        assertEquals(ProjectionMode.ANDROID_AUTO, p.decide(known, pixel))
-    }
-
-    @Test
-    fun midTripSwitchCanBeDisabled() {
-        val p = policy()
-        val s = known.copy(switchPhoneMidTrip = false)
-        p.decide(s, pixel)
-        assertNull(p.decide(s, iphone))
         p.onPowerCycle()
-        assertEquals(ProjectionMode.ANDROID_AUTO, p.decide(s, pixel))
+        assertEquals(ConnectAction.AutoOpen(ProjectionMode.ANDROID_AUTO), p.decide(known, pixel))
     }
 
     @Test
-    fun guessesCarPlayFromNameWhenAnyDeviceAllowed() {
-        assertEquals(ProjectionMode.CARPLAY, policy().decide(Settings(onlyLastDevice = false), BtDevice("CC", "iPhone 15")))
+    fun manualLaunchMeansLaterConnectionsOnlySuggest() {
+        val p = AutoLaunchPolicy()
+        p.onManualLaunch()
+        assertEquals(ConnectAction.Suggest(pixel, ProjectionMode.ANDROID_AUTO), p.decide(known, pixel))
+    }
+
+    @Test
+    fun otherPhoneAtStartIsOnlySuggestedWhenOnlyLastDevice() {
+        assertEquals(ConnectAction.Suggest(iphone, ProjectionMode.CARPLAY), AutoLaunchPolicy().decide(known, iphone))
+    }
+
+    @Test
+    fun autoOpenDisabledStillSuggests() {
+        assertEquals(
+            ConnectAction.Suggest(pixel, ProjectionMode.ANDROID_AUTO),
+            AutoLaunchPolicy().decide(known.copy(autoOpenOnBluetooth = false), pixel),
+        )
+    }
+
+    @Test
+    fun guessesCarPlayFromName() {
+        assertEquals(
+            ConnectAction.AutoOpen(ProjectionMode.CARPLAY),
+            AutoLaunchPolicy().decide(Settings(onlyLastDevice = false), BtDevice("CC", "iPhone 15")),
+        )
     }
 
     @Test
     fun unknownNonAppleDeviceDoesNothing() {
-        assertNull(policy().decide(Settings(), BtDevice("CC:CC", "Fone JBL")))
-    }
-
-    @Test
-    fun disabledSettingDoesNothing() {
-        assertNull(policy().decide(known.copy(autoOpenOnBluetooth = false), pixel))
-    }
-
-    @Test
-    fun manualLaunchCountsAsThisTrip() {
-        val p = policy()
-        p.onManualLaunch(pixel)
-        assertNull(p.decide(known, pixel)) // queda rápida do mesmo aparelho
-        assertEquals(ProjectionMode.CARPLAY, p.decide(known, iphone))
+        assertEquals(ConnectAction.Nothing, AutoLaunchPolicy().decide(Settings(), BtDevice("CC:CC", "Fone JBL")))
     }
 }

@@ -24,11 +24,14 @@ class SettingsRepository(context: Context) {
         carPlayTarget = decodeTarget(prefs.getString(CP_TARGET, null)),
         autoOpenOnBluetooth = prefs.getBoolean(AUTO_OPEN, true),
         onlyLastDevice = prefs.getBoolean(ONLY_LAST, true),
-        switchPhoneMidTrip = prefs.getBoolean(SWITCH_MID_TRIP, true),
         lastDeviceAddress = prefs.getString(LAST_DEVICE, null),
         devices = prefs.getStringSet(DEVICES, emptySet()).orEmpty()
             .mapNotNull(::decodeDevice)
             .associateBy { it.address },
+        logoKind = runCatching { LogoKind.valueOf(prefs.getString(LOGO_KIND, null) ?: "") }.getOrDefault(LogoKind.DEFAULT),
+        logoText = prefs.getString(LOGO_TEXT, null) ?: "HR-V",
+        logoSeconds = prefs.getInt(LOGO_SECONDS, 3),
+        logoOnIgnition = prefs.getBoolean(LOGO_ON_IGNITION, true),
     )
 
     private fun save(s: Settings) {
@@ -38,9 +41,12 @@ class SettingsRepository(context: Context) {
             .putString(CP_TARGET, encodeTarget(s.carPlayTarget))
             .putBoolean(AUTO_OPEN, s.autoOpenOnBluetooth)
             .putBoolean(ONLY_LAST, s.onlyLastDevice)
-            .putBoolean(SWITCH_MID_TRIP, s.switchPhoneMidTrip)
             .putString(LAST_DEVICE, s.lastDeviceAddress)
             .putStringSet(DEVICES, s.devices.values.map(::encodeDevice).toSet())
+            .putString(LOGO_KIND, s.logoKind.name)
+            .putString(LOGO_TEXT, s.logoText)
+            .putInt(LOGO_SECONDS, s.logoSeconds)
+            .putBoolean(LOGO_ON_IGNITION, s.logoOnIgnition)
             .apply()
     }
 
@@ -50,9 +56,12 @@ class SettingsRepository(context: Context) {
         const val CP_TARGET = "carplay_target"
         const val AUTO_OPEN = "auto_open_bluetooth"
         const val ONLY_LAST = "only_last_device"
-        const val SWITCH_MID_TRIP = "switch_phone_mid_trip"
         const val LAST_DEVICE = "last_device"
         const val DEVICES = "devices"
+        const val LOGO_KIND = "logo_kind"
+        const val LOGO_TEXT = "logo_text"
+        const val LOGO_SECONDS = "logo_seconds"
+        const val LOGO_ON_IGNITION = "logo_on_ignition"
         const val SEP = "\t"
 
         fun encodeTarget(t: LaunchTarget?) = t?.let { it.packageName + SEP + it.activity.orEmpty() }

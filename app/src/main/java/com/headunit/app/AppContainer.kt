@@ -3,9 +3,11 @@ package com.headunit.app
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import com.headunit.app.logo.LogoRepository
 import com.headunit.app.projection.AutoLaunchPolicy
 import com.headunit.app.projection.BluetoothMonitor
 import com.headunit.app.projection.BtDevice
+import com.headunit.app.projection.ConnectAction
 import com.headunit.app.projection.ProjectionLauncher
 import com.headunit.app.settings.CameraConfigRepository
 import com.headunit.app.settings.ProjectionMode
@@ -62,9 +64,12 @@ class AppContainer(private val context: Context) {
 
     val settings = SettingsRepository(context)
     val camera = CameraConfigRepository(context)
+    val logo = LogoRepository(context, settings)
     val projection = ProjectionLauncher(context, settings)
     private val autoLaunch = AutoLaunchPolicy()
-    val bluetooth = BluetoothMonitor(context, ::onBluetoothConnected)
+    val bluetooth = BluetoothMonitor(context, ::onBluetoothConnected, onDisconnected = { d ->
+        if (_suggestion.value?.device?.address == d.address) _suggestion.value = null
+    })
 
     private val _audioSource = MutableStateFlow(AudioSource.NONE)
     val audioSource: StateFlow<AudioSource> = _audioSource.asStateFlow()
@@ -114,7 +119,8 @@ class AppContainer(private val context: Context) {
     fun openProjection(mode: ProjectionMode) {
         val device = bluetooth.connected.value.lastOrNull()
         device?.let { d -> settings.update { it.rememberDevice(d.address, d.name, mode) } }
-        autoLaunch.onManualLaunch(device)
+        autoLaunch.onManualLaunch()
+        _suggestion.value = null
         player.pause()
         radio.powerOff()
         projection.launch(mode)
@@ -123,8 +129,23 @@ class AppContainer(private val context: Context) {
     /** Nova "partida" simulada: libera a abertura automática de novo. */
     fun resetAutoLaunch() = autoLaunch.onPowerCycle()
 
+    /** Celular que conectou durante a viagem: o aviso na tela pergunta se deve abrir. */
+    private val _suggestion = MutableStateFlow<ConnectAction.Suggest?>(null)
+    val suggestion: StateFlow<ConnectAction.Suggest?> = _suggestion.asStateFlow()
+
+    fun dismissSuggestion() {
+        _suggestion.value = null
+    }
+
     private fun onBluetoothConnected(device: BtDevice) {
-        val mode = autoLaunch.decide(settings.settings.value, device) ?: return
+        val mode = when (val action = autoLaunch.decide(settings.settings.value, device)) {
+            is ConnectAction.AutoOpen -> action.mode
+            is ConnectAction.Suggest -> {
+                _suggestion.value = action
+                return
+            }
+            ConnectAction.Nothing -> return
+        }
         scope.launch {
             delay(AUTO_LAUNCH_DELAY_MS) // dá tempo do celular terminar de conectar
             settings.update { it.rememberDevice(device.address, device.name, mode) }

@@ -14,8 +14,12 @@ data class LocalMedia(
     val subtitle: String,
     val durationMs: Long,
     val isVideo: Boolean,
-    /** Nome do volume: armazenamento interno, pendrive, cartão SD... */
+    /** Nome do volume para exibir: armazenamento interno, pendrive, cartão SD... */
     val volume: String,
+    /** Identificador do volume no Android ("external_primary", "1234-ABCD"...). */
+    val volumeId: String = "",
+    /** Pasta dentro do volume, sem barras nas pontas (ex.: "Musicas/Rock"). */
+    val folder: String = "",
 )
 
 /**
@@ -42,6 +46,7 @@ class MediaRepository(private val context: Context) {
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.ARTIST,
             MediaStore.Audio.Media.DURATION,
+            folderColumn(),
         )
         val result = mutableListOf<LocalMedia>()
         context.contentResolver.query(
@@ -52,6 +57,7 @@ class MediaRepository(private val context: Context) {
             val title = c.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val artist = c.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
             val duration = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
+            val folder = c.getColumnIndexOrThrow(folderColumn())
             while (c.moveToNext()) {
                 result += LocalMedia(
                     uri = ContentUris.withAppendedId(collection, c.getLong(id)),
@@ -60,6 +66,8 @@ class MediaRepository(private val context: Context) {
                     durationMs = c.getLong(duration),
                     isVideo = false,
                     volume = volumeLabel(volume),
+                    volumeId = volume,
+                    folder = normalizeFolder(c.getString(folder)),
                 )
             }
         }
@@ -72,6 +80,7 @@ class MediaRepository(private val context: Context) {
             MediaStore.Video.Media._ID,
             MediaStore.Video.Media.TITLE,
             MediaStore.Video.Media.DURATION,
+            folderColumn(),
         )
         val result = mutableListOf<LocalMedia>()
         context.contentResolver.query(
@@ -81,6 +90,7 @@ class MediaRepository(private val context: Context) {
             val id = c.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
             val title = c.getColumnIndexOrThrow(MediaStore.Video.Media.TITLE)
             val duration = c.getColumnIndexOrThrow(MediaStore.Video.Media.DURATION)
+            val folder = c.getColumnIndexOrThrow(folderColumn())
             while (c.moveToNext()) {
                 result += LocalMedia(
                     uri = ContentUris.withAppendedId(collection, c.getLong(id)),
@@ -89,10 +99,32 @@ class MediaRepository(private val context: Context) {
                     durationMs = c.getLong(duration),
                     isVideo = true,
                     volume = volumeLabel(volume),
+                    volumeId = volume,
+                    folder = normalizeFolder(c.getString(folder)),
                 )
             }
         }
         return result
+    }
+
+    /** Android 10+: RELATIVE_PATH ("Musicas/Rock/"). Android 9: caminho completo do arquivo. */
+    private fun folderColumn(): String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.MediaColumns.RELATIVE_PATH
+        } else {
+            @Suppress("DEPRECATION")
+            MediaStore.MediaColumns.DATA
+        }
+
+    private fun normalizeFolder(raw: String?): String {
+        if (raw == null) return ""
+        val relative = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            raw
+        } else {
+            // "/storage/emulated/0/Musicas/Rock/x.mp3" -> "Musicas/Rock"
+            raw.substringBeforeLast('/').replace(Regex("^/storage/(emulated/\\d+|[^/]+)/?"), "")
+        }
+        return FolderTree.normalize(relative)
     }
 
     private fun volumeLabel(volume: String) = when (volume) {
