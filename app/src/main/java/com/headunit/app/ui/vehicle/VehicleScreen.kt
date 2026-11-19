@@ -53,6 +53,7 @@ fun VehicleScreen(container: AppContainer) {
             Info("Ignição", state.ignition.label)
             Info("Marcha", state.gear.label)
             Info("Velocidade", "%.0f km/h".format(state.speedKmh))
+            Info("Volante", "%.0f°".format(state.steeringWheelDeg))
             Info("Vídeo permitido", if (DrivingRules.isVideoAllowed(state)) "Sim" else "Não (em movimento)")
             if (container.isAutomotive) {
                 Spacer(Modifier.height(16.dp))
@@ -73,7 +74,7 @@ fun VehicleScreen(container: AppContainer) {
 
         Card(Modifier.weight(1.4f).fillMaxHeight()) {
             if (hal.isSimulated) {
-                SimulatorPanel(container.simulatedVehicle, state.ignition, state.gear, state.speedKmh)
+                SimulatorPanel(container.simulatedVehicle, state.ignition, state.gear, state.speedKmh, state.steeringWheelDeg)
             } else {
                 Text("Simulador desativado", style = MaterialTheme.typography.titleLarge)
                 Text("Os dados vêm do Android Automotive. Ative \"Forçar simulador\" para controlar por aqui.")
@@ -84,7 +85,7 @@ fun VehicleScreen(container: AppContainer) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SimulatorPanel(sim: SimulatedVehicleHal, ignition: Ignition, gear: Gear, speed: Float) {
+private fun SimulatorPanel(sim: SimulatedVehicleHal, ignition: Ignition, gear: Gear, speed: Float, steering: Float) {
     Text("Simulador", style = MaterialTheme.typography.titleLarge)
     Spacer(Modifier.height(8.dp))
 
@@ -106,6 +107,12 @@ private fun SimulatorPanel(sim: SimulatedVehicleHal, ignition: Ignition, gear: G
 
     Text("Velocidade: %.0f km/h".format(speed), style = MaterialTheme.typography.labelLarge)
     Slider(value = speed, onValueChange = sim::setSpeed, valueRange = 0f..SimulatedVehicleHal.MAX_SPEED_KMH)
+
+    Text("Volante: %.0f° (trajetória da câmera de ré)".format(steering), style = MaterialTheme.typography.labelLarge)
+    Slider(
+        value = steering, onValueChange = sim::setSteering,
+        valueRange = -SimulatedVehicleHal.MAX_STEERING_DEG..SimulatedVehicleHal.MAX_STEERING_DEG,
+    )
 
     Text("Botões do volante", style = MaterialTheme.typography.labelLarge)
     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {

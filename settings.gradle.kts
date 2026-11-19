@@ -17,5 +17,6 @@ rootProject.name = "headunit-android"
 
 include(":app")
 include(":core:hal")
+include(":core:camera")
 include(":feature:media")
 include(":feature:radio")

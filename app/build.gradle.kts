@@ -37,6 +37,7 @@ android {
 
 dependencies {
     implementation(project(":core:hal"))
+    implementation(project(":core:camera"))
     implementation(project(":feature:media"))
     implementation(project(":feature:radio"))
 

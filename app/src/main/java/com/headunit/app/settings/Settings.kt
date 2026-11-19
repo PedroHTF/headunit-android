@@ -20,8 +20,10 @@ data class Settings(
     val carPlayTarget: LaunchTarget? = null,
     /** Abrir a projeção sozinho quando um celular conhecido conectar no Bluetooth. */
     val autoOpenOnBluetooth: Boolean = true,
-    /** Só abrir automaticamente para o último aparelho usado. */
+    /** Na primeira conexão após ligar o carro, só abrir para o último aparelho usado. */
     val onlyLastDevice: Boolean = true,
+    /** Durante a viagem, outro celular que conectar assume a projeção no modo dele. */
+    val switchPhoneMidTrip: Boolean = true,
     val lastDeviceAddress: String? = null,
     /** Aparelhos conhecidos, por endereço Bluetooth. */
     val devices: Map<String, KnownDevice> = emptyMap(),

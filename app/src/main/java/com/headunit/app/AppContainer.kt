@@ -7,6 +7,7 @@ import com.headunit.app.projection.AutoLaunchPolicy
 import com.headunit.app.projection.BluetoothMonitor
 import com.headunit.app.projection.BtDevice
 import com.headunit.app.projection.ProjectionLauncher
+import com.headunit.app.settings.CameraConfigRepository
 import com.headunit.app.settings.ProjectionMode
 import com.headunit.app.settings.SettingsRepository
 import com.headunit.core.hal.radio.RadioHal
@@ -60,6 +61,7 @@ class AppContainer(private val context: Context) {
     val player = PlayerConnection(context)
 
     val settings = SettingsRepository(context)
+    val camera = CameraConfigRepository(context)
     val projection = ProjectionLauncher(context, settings)
     private val autoLaunch = AutoLaunchPolicy()
     val bluetooth = BluetoothMonitor(context, ::onBluetoothConnected)
@@ -110,10 +112,9 @@ class AppContainer(private val context: Context) {
      * "o último aparelho" desse modo, e nas próximas partidas a projeção abre sozinha.
      */
     fun openProjection(mode: ProjectionMode) {
-        bluetooth.connected.value.lastOrNull()?.let { device ->
-            settings.update { it.rememberDevice(device.address, device.name, mode) }
-        }
-        autoLaunch.onManualLaunch()
+        val device = bluetooth.connected.value.lastOrNull()
+        device?.let { d -> settings.update { it.rememberDevice(d.address, d.name, mode) } }
+        autoLaunch.onManualLaunch(device)
         player.pause()
         radio.powerOff()
         projection.launch(mode)

@@ -36,4 +36,6 @@ data class VehicleState(
     val ignition: Ignition = Ignition.ON,
     val gear: Gear = Gear.PARK,
     val speedKmh: Float = 0f,
+    /** Ângulo do volante em graus (+ = direita). Usado na trajetória da câmera de ré. */
+    val steeringWheelDeg: Float = 0f,
 )

@@ -19,11 +19,12 @@ próprio com mídia USB, rádio e integração com os dados do carro. Roda em:
 | Vídeo bloqueado com o carro em movimento (> 5 km/h), desativável | ✅ |
 | Rádio FM/AM: sintonia, busca, memórias, RDS | 🟡 simulado (sem áudio) |
 | Marcha, ignição e velocidade | ✅ Android Automotive / 🟡 simulado nas demais |
-| Câmera de ré automática ao engatar a ré | 🟡 imagem simulada com linhas-guia |
+| Câmera de ré automática ao engatar a ré | 🟡 imagem simulada (cena gerada pelo modelo da câmera) |
+| Linhas de distância (metros e "carros"), trajetória pelo volante, remoção do fisheye, calibração | ✅ Configurações → Ajustar câmera de ré |
 | Tela apagada com ACC desligado | ✅ |
 | Botões do volante (próxima, anterior, play, volume, fonte) | ✅ teclas de mídia / simulador |
 | Ícones **Android Auto** e **CarPlay** na tela inicial, abrindo o Zlink | ✅ (app/tela configuráveis) |
-| Abrir Android Auto/CarPlay sozinho ao conectar o celular no Bluetooth | ✅ 1ª conexão após ligar o carro |
+| Abrir Android Auto/CarPlay sozinho ao conectar o celular no Bluetooth | ✅ inclusive trocando de celular na viagem |
 | Configurações (vídeo em qualquer velocidade, projeção, Bluetooth) | ✅ |
 | Abrir outros apps | ✅ tela "Apps" |
 | Bluetooth (chamadas, agenda) | ⏳ próximos passos |
@@ -62,6 +63,27 @@ aba **Actions** → execução mais recente → **Artifacts** → `headunit-debu
   à parte e o Android não vê a conexão; nesse caso vamos ouvir os avisos do app do fabricante.
   E o Android pode bloquear abrir outro app se o nosso não estiver na tela (normalmente estará,
   por ser a tela inicial).
+
+## Câmera de ré
+
+| Imagem crua (fisheye) | Fisheye removido | Volante virado |
+|---|---|---|
+| ![](docs/img/camera-fisheye.png) | ![](docs/img/camera-corrigida.png) | ![](docs/img/camera-volante.png) |
+
+Em **Configurações → Ajustar câmera de ré** (com prévia ao vivo):
+
+- **Medidas do carro:** largura, comprimento (usado nas marcas "1 carro", "2 carros"),
+  entre-eixos, distância do eixo traseiro ao para-choque, relação volante/rodas.
+- **Posição da câmera:** altura, inclinação, rotação, giro e deslocamento lateral.
+- **Fisheye:** intensidade e campo de visão da lente; opção de removê-lo.
+- **Linhas:** marcas em metros (0,3 a 3 m) e em carros; trajetória que curva com o volante
+  (modelo geométrico do carro: entre-eixos + ângulo das rodas); ajustes finos.
+
+Como calibrar: escolha a cena **Grade 1 m** e mexa na altura/inclinação/fisheye até a imagem
+ficar como a da sua câmera; no carro, o mesmo vale com marcas no chão (ex.: fita a 1 e 2 m).
+
+O ângulo do volante vem do simulador (tela Veículo), do AAOS ou, na central, da caixa CAN
+(as caixas Raise/Hiworld costumam informar o ângulo do volante).
 
 ## Arquitetura
 

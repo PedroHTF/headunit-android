@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.headunit.app.AppContainer
 import com.headunit.app.ui.apps.AppsScreen
+import com.headunit.app.ui.camera.CameraSetupScreen
 import com.headunit.app.ui.camera.PowerOffOverlay
 import com.headunit.app.ui.camera.ReverseCameraOverlay
 import com.headunit.app.ui.home.HomeScreen
@@ -64,7 +65,9 @@ fun HeadUnitApp(container: AppContainer) {
     val vehicle by container.vehicleState.collectAsStateWithLifecycle()
     val hal by container.vehicleHal.collectAsStateWithLifecycle()
     val settings by container.settings.settings.collectAsStateWithLifecycle()
+    val camera by container.camera.config.collectAsStateWithLifecycle()
     var screen by rememberSaveable { mutableStateOf(Screen.HOME) }
+    var cameraSetup by rememberSaveable { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(Modifier.fillMaxSize()) {
@@ -92,14 +95,16 @@ fun HeadUnitApp(container: AppContainer) {
                         Screen.RADIO -> RadioScreen(container.radio, onPowerOn = container::onRadioStarted)
                         Screen.VEHICLE -> VehicleScreen(container)
                         Screen.APPS -> AppsScreen()
-                        Screen.SETTINGS -> SettingsScreen(container)
+                        Screen.SETTINGS -> SettingsScreen(container, onOpenCameraSetup = { cameraSetup = true })
                     }
                 }
             }
         }
 
-        if (DrivingRules.shouldShowReverseCamera(vehicle)) {
-            ReverseCameraOverlay()
+        if (cameraSetup) {
+            CameraSetupScreen(container, onClose = { cameraSetup = false })
+        } else if (DrivingRules.shouldShowReverseCamera(vehicle)) {
+            ReverseCameraOverlay(camera, vehicle.steeringWheelDeg)
         }
         if (!vehicle.ignition.isPowered) {
             PowerOffOverlay(

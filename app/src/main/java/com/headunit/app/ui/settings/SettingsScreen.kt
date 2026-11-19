@@ -48,7 +48,7 @@ import com.headunit.app.settings.LaunchTarget
 import com.headunit.app.settings.ProjectionMode
 
 @Composable
-fun SettingsScreen(container: AppContainer) {
+fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit) {
     val settings by container.settings.settings.collectAsStateWithLifecycle()
     val connected by container.bluetooth.connected.collectAsStateWithLifecycle()
     var btGranted by remember { mutableStateOf(container.bluetooth.hasPermission()) }
@@ -73,6 +73,16 @@ fun SettingsScreen(container: AppContainer) {
                 checked = settings.videoWhileDriving,
                 onChange = { v -> container.settings.update { it.copy(videoWhileDriving = v) } },
             )
+        }
+
+        Section("Câmera de ré") {
+            Text(
+                "Medidas do carro, posição da câmera, correção do fisheye, linhas de distância " +
+                    "(em metros ou em carros) e trajetória pelo volante, com prévia ao vivo.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = onOpenCameraSetup) { Text("Ajustar câmera de ré") }
         }
 
         Section("Android Auto e CarPlay (Zlink)") {
@@ -102,13 +112,20 @@ fun SettingsScreen(container: AppContainer) {
         Section("Abrir automaticamente pelo Bluetooth") {
             SwitchRow(
                 title = "Abrir ao conectar o celular",
-                subtitle = "Na primeira conexão Bluetooth depois de ligar o carro, abre o modo usado por aquele celular.",
+                subtitle = "Quando um celular conhecido conecta no Bluetooth, abre o modo dele (Android Auto ou CarPlay).",
                 checked = settings.autoOpenOnBluetooth,
                 onChange = { v -> container.settings.update { it.copy(autoOpenOnBluetooth = v) } },
             )
             SwitchRow(
-                title = "Só para o último aparelho usado",
-                subtitle = "Ignora outros celulares (ex.: o do passageiro). Último: " +
+                title = "Trocar de celular durante a viagem",
+                subtitle = "Se outro celular conhecido conectar no meio da viagem, ele assume a projeção. " +
+                    "O mesmo celular reconectando também reabre, exceto em quedas de menos de 1 minuto.",
+                checked = settings.switchPhoneMidTrip,
+                onChange = { v -> container.settings.update { it.copy(switchPhoneMidTrip = v) } },
+            )
+            SwitchRow(
+                title = "Ao ligar o carro, só o último aparelho",
+                subtitle = "Na primeira conexão, ignora outros celulares (ex.: o do passageiro). Último: " +
                     (settings.lastDevice?.let { "${it.name} → ${it.mode.label}" } ?: "nenhum ainda"),
                 checked = settings.onlyLastDevice,
                 onChange = { v -> container.settings.update { it.copy(onlyLastDevice = v) } },

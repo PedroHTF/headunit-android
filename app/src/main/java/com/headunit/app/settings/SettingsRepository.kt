@@ -24,6 +24,7 @@ class SettingsRepository(context: Context) {
         carPlayTarget = decodeTarget(prefs.getString(CP_TARGET, null)),
         autoOpenOnBluetooth = prefs.getBoolean(AUTO_OPEN, true),
         onlyLastDevice = prefs.getBoolean(ONLY_LAST, true),
+        switchPhoneMidTrip = prefs.getBoolean(SWITCH_MID_TRIP, true),
         lastDeviceAddress = prefs.getString(LAST_DEVICE, null),
         devices = prefs.getStringSet(DEVICES, emptySet()).orEmpty()
             .mapNotNull(::decodeDevice)
@@ -37,6 +38,7 @@ class SettingsRepository(context: Context) {
             .putString(CP_TARGET, encodeTarget(s.carPlayTarget))
             .putBoolean(AUTO_OPEN, s.autoOpenOnBluetooth)
             .putBoolean(ONLY_LAST, s.onlyLastDevice)
+            .putBoolean(SWITCH_MID_TRIP, s.switchPhoneMidTrip)
             .putString(LAST_DEVICE, s.lastDeviceAddress)
             .putStringSet(DEVICES, s.devices.values.map(::encodeDevice).toSet())
             .apply()
@@ -48,6 +50,7 @@ class SettingsRepository(context: Context) {
         const val CP_TARGET = "carplay_target"
         const val AUTO_OPEN = "auto_open_bluetooth"
         const val ONLY_LAST = "only_last_device"
+        const val SWITCH_MID_TRIP = "switch_phone_mid_trip"
         const val LAST_DEVICE = "last_device"
         const val DEVICES = "devices"
         const val SEP = "\t"

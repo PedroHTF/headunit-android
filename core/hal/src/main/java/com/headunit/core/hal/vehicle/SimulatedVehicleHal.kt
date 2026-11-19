@@ -24,6 +24,8 @@ class SimulatedVehicleHal(initial: VehicleState = VehicleState()) : VehicleHal {
 
     fun setSpeed(kmh: Float) = _state.update { it.copy(speedKmh = kmh.coerceIn(0f, MAX_SPEED_KMH)) }
 
+    fun setSteering(deg: Float) = _state.update { it.copy(steeringWheelDeg = deg.coerceIn(-MAX_STEERING_DEG, MAX_STEERING_DEG)) }
+
     fun pressKey(key: SteeringKey) {
         _keys.tryEmit(key)
     }
@@ -33,5 +35,6 @@ class SimulatedVehicleHal(initial: VehicleState = VehicleState()) : VehicleHal {
 
     companion object {
         const val MAX_SPEED_KMH = 200f
+        const val MAX_STEERING_DEG = 540f
     }
 }

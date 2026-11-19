@@ -53,6 +53,7 @@ class CarApiVehicleHal(private val context: Context) : VehicleHal {
         register(manager, VehiclePropertyIds.GEAR_SELECTION, CarPropertyManager.SENSOR_RATE_ONCHANGE)
         register(manager, VehiclePropertyIds.IGNITION_STATE, CarPropertyManager.SENSOR_RATE_ONCHANGE)
         register(manager, VehiclePropertyIds.PERF_VEHICLE_SPEED, CarPropertyManager.SENSOR_RATE_NORMAL)
+        register(manager, VehiclePropertyIds.PERF_STEERING_ANGLE, CarPropertyManager.SENSOR_RATE_NORMAL)
     }
 
     private fun register(manager: CarPropertyManager, propertyId: Int, rate: Float) {
@@ -67,6 +68,9 @@ class CarApiVehicleHal(private val context: Context) : VehicleHal {
             VehiclePropertyIds.GEAR_SELECTION -> _state.update { it.copy(gear = mapGear(raw as Int)) }
             VehiclePropertyIds.IGNITION_STATE -> _state.update { it.copy(ignition = mapIgnition(raw as Int)) }
             VehiclePropertyIds.PERF_VEHICLE_SPEED -> _state.update { it.copy(speedKmh = (raw as Float) * 3.6f) }
+            // O AAOS informa o ângulo das RODAS; convertemos para volante com uma relação típica.
+            VehiclePropertyIds.PERF_STEERING_ANGLE ->
+                _state.update { it.copy(steeringWheelDeg = (raw as Float) * TYPICAL_STEERING_RATIO) }
         }
     }
 
@@ -79,6 +83,7 @@ class CarApiVehicleHal(private val context: Context) : VehicleHal {
 
     companion object {
         private const val TAG = "CarApiVehicleHal"
+        private const val TYPICAL_STEERING_RATIO = 15f
 
         fun mapGear(value: Int): Gear = when (value) {
             VehicleGear.GEAR_PARK -> Gear.PARK
