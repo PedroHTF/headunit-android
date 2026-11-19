@@ -215,7 +215,7 @@ private fun FolderBrowser(
         LazyColumn(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             itemsIndexed(subfolders, key = { _, f -> "dir-$f" }) { _, name ->
                 val full = FolderTree.join(path, name)
-                FolderRow(Icons.Filled.Folder, name, "${FolderTree.countUnder(folders, full)} arquivos") { onNavigate(volumeId, full) }
+                FolderRow(Icons.Filled.Folder, name, FolderTree.countUnder(folders, full).let { n -> if (n == 1) "1 arquivo" else "$n arquivos" }) { onNavigate(volumeId, full) }
             }
             itemsIndexed(files, key = { _, m -> m.uri.toString() }) { index, media ->
                 MediaRow(media) { onPlay(files, index) }
