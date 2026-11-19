@@ -72,8 +72,8 @@ aba **Actions** → execução mais recente → **Artifacts** → `headunit-debu
 
 ![Logo padrão (prévia)](docs/img/logo-padrao.png)
 
-Logo padrão: "HR-V" cromado com o reflexo em terracota, fundo preto e um asterisco no fim
-(imagem gerada por `tools/make_logo.py`; dá para ajustar e gerar de novo).
+Logo padrão: imagem "HR-V" cromada com detalhes em terracota e asterisco
+(`app/src/main/res/drawable-nodpi/boot_logo.jpg`).
 Aparece ao iniciar e, opcionalmente, ao ligar a ignição; toque para pular. Para trocar por uma
 imagem ou vídeo próprio, veja [docs/pendrive.md](docs/pendrive.md).
 

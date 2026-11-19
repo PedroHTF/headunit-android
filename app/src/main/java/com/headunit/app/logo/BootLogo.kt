@@ -72,10 +72,7 @@ fun BootSplash(
 
 private const val MAX_VIDEO_MS = 15_000L
 
-/**
- * Logo padrão: imagem "HR-V" cromada com reflexo em terracota e asterisco
- * (gerada por tools/make_logo.py). Entra com um fade suave.
- */
+/** Logo padrão: imagem HR-V (res/drawable-nodpi/boot_logo.jpg). Entra com um fade suave. */
 @Composable
 fun DefaultLogo(modifier: Modifier = Modifier, animate: Boolean = true) {
     val progress = remember { Animatable(if (animate) 0f else 1f) }
