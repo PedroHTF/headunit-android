@@ -19,6 +19,8 @@ class SettingsRepository(context: Context) {
     }
 
     private fun load() = Settings(
+        themeMode = runCatching { ThemeMode.valueOf(prefs.getString(THEME, null) ?: "") }.getOrDefault(ThemeMode.AUTO),
+        highContrast = prefs.getBoolean(HIGH_CONTRAST, false),
         videoWhileDriving = prefs.getBoolean(VIDEO, false),
         androidAutoTarget = decodeTarget(prefs.getString(AA_TARGET, null)),
         carPlayTarget = decodeTarget(prefs.getString(CP_TARGET, null)),
@@ -35,6 +37,8 @@ class SettingsRepository(context: Context) {
 
     private fun save(s: Settings) {
         prefs.edit()
+            .putString(THEME, s.themeMode.name)
+            .putBoolean(HIGH_CONTRAST, s.highContrast)
             .putBoolean(VIDEO, s.videoWhileDriving)
             .putString(AA_TARGET, encodeTarget(s.androidAutoTarget))
             .putString(CP_TARGET, encodeTarget(s.carPlayTarget))
@@ -50,6 +54,8 @@ class SettingsRepository(context: Context) {
 
     private companion object {
         const val VIDEO = "video_while_driving"
+        const val THEME = "theme_mode"
+        const val HIGH_CONTRAST = "high_contrast"
         const val AA_TARGET = "android_auto_target"
         const val CP_TARGET = "carplay_target"
         const val AUTO_OPEN = "auto_open_bluetooth"

@@ -50,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.headunit.app.logo.DefaultLogo
 import com.headunit.app.logo.LogoCandidate
 import com.headunit.app.settings.LogoKind
+import com.headunit.app.settings.ThemeMode
 import kotlinx.coroutines.launch
 import com.headunit.app.projection.AppEntry
 import com.headunit.app.projection.BtDevice
@@ -74,6 +75,29 @@ fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit, onPre
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        Section("Aparência") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Tema", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(end = 8.dp))
+                ThemeMode.entries.forEach { mode ->
+                    FilterChip(
+                        selected = settings.themeMode == mode,
+                        onClick = { container.settings.update { it.copy(themeMode = mode) } },
+                        label = { Text(mode.label) },
+                    )
+                }
+            }
+            Text(
+                "Automático segue o modo noturno do sistema (nas centrais, normalmente ligado ao farol).",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            SwitchRow(
+                title = "Alto contraste",
+                subtitle = "Preto e branco puros e cores de destaque fortes, para ler sob sol forte ou com baixa visão.",
+                checked = settings.highContrast,
+                onChange = { v -> container.settings.update { it.copy(highContrast = v) } },
+            )
+        }
+
         Section("Vídeo") {
             SwitchRow(
                 title = "Vídeo em qualquer velocidade",

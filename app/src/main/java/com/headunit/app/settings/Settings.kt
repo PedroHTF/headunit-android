@@ -9,6 +9,9 @@ enum class ProjectionMode(val label: String) {
 /** App (e opcionalmente a tela específica) que um ícone de projeção abre. */
 data class LaunchTarget(val packageName: String, val activity: String? = null)
 
+/** Tema: automático (segue o modo noturno do sistema/farol), claro ou escuro. */
+enum class ThemeMode(val label: String) { AUTO("Automático"), LIGHT("Claro"), DARK("Escuro") }
+
 /** Logo da inicialização: o padrão (desenhado pelo app) ou um arquivo do usuário. */
 enum class LogoKind { DEFAULT, IMAGE, VIDEO }
 
@@ -16,6 +19,8 @@ enum class LogoKind { DEFAULT, IMAGE, VIDEO }
 data class KnownDevice(val address: String, val name: String, val mode: ProjectionMode)
 
 data class Settings(
+    val themeMode: ThemeMode = ThemeMode.AUTO,
+    val highContrast: Boolean = false,
     /** Mostrar vídeo com o carro em movimento. */
     val videoWhileDriving: Boolean = false,
     /** Alvo escolhido pelo usuário; null = detectar o Zlink automaticamente. */

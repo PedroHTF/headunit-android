@@ -9,6 +9,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -41,7 +43,8 @@ class MainActivity : ComponentActivity() {
             bluetoothPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
         }
         setContent {
-            HeadUnitTheme {
+            val settings by container.settings.settings.collectAsStateWithLifecycle()
+            HeadUnitTheme(settings.themeMode, settings.highContrast) {
                 HeadUnitApp(container)
             }
         }

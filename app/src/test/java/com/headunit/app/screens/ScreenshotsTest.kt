@@ -13,6 +13,7 @@ import com.headunit.app.logo.BootSplash
 import com.headunit.app.projection.BtDevice
 import com.headunit.app.settings.LogoKind
 import com.headunit.app.settings.ProjectionMode
+import com.headunit.app.settings.ThemeMode
 import com.headunit.app.ui.HeadUnitApp
 import com.headunit.app.ui.Screen
 import com.headunit.app.ui.theme.HeadUnitTheme
@@ -56,12 +57,18 @@ class ScreenshotsTest {
         LocalMedia(Uri.parse("content://m/6"), "Show ao vivo", "Vídeo", 3_600_000, true, "USB/SD", "usb", "Videos"),
     )
 
-    private fun shoot(name: String, waitMs: Long = 300, content: @Composable () -> Unit) {
+    private fun shoot(
+        name: String,
+        waitMs: Long = 300,
+        mode: ThemeMode = ThemeMode.DARK,
+        highContrast: Boolean = false,
+        content: @Composable () -> Unit,
+    ) {
         assumeTrue("Passe -Dscreenshots=pasta para gerar", outDir != null)
         container.mediaSource = { media() }
         // Relógio manual: a barra de status tem um relógio em loop, então a tela nunca "para".
         compose.mainClock.autoAdvance = false
-        compose.setContent { HeadUnitTheme { content() } }
+        compose.setContent { HeadUnitTheme(mode, highContrast) { content() } }
         // Deixa animações e cálculos em segundo plano (câmera) terminarem.
         repeat(6) {
             compose.mainClock.advanceTimeBy(waitMs)
@@ -78,8 +85,25 @@ class ScreenshotsTest {
         File(outDir, name).outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
-    private fun screen(name: String, s: Screen, tab: Int = 0) =
-        shoot(name) { HeadUnitApp(container, initialScreen = s, showSplashOnStart = false, initialMediaTab = tab) }
+    private fun screen(name: String, s: Screen, tab: Int = 0, mode: ThemeMode = ThemeMode.DARK, hc: Boolean = false) =
+        shoot(name, mode = mode, highContrast = hc) {
+            HeadUnitApp(container, initialScreen = s, showSplashOnStart = false, initialMediaTab = tab)
+        }
+
+    // ---- Temas
+    @Test fun t20_homeLight() = screen("20-inicio-claro.png", Screen.HOME, mode = ThemeMode.LIGHT)
+    @Test fun t21_homeDarkHc() = screen("21-inicio-escuro-alto-contraste.png", Screen.HOME, hc = true)
+    @Test fun t22_homeLightHc() = screen("22-inicio-claro-alto-contraste.png", Screen.HOME, mode = ThemeMode.LIGHT, hc = true)
+    @Test fun t23_radioLight() {
+        container.onRadioStarted(); container.radio.tune(94_700); container.radio.powerOn()
+        screen("23-radio-claro.png", Screen.RADIO, mode = ThemeMode.LIGHT)
+    }
+    @Test fun t24_radioDarkHc() {
+        container.onRadioStarted(); container.radio.tune(94_700); container.radio.powerOn()
+        screen("24-radio-escuro-alto-contraste.png", Screen.RADIO, hc = true)
+    }
+    @Test fun t25_settingsLight() = screen("25-configuracoes-claro.png", Screen.SETTINGS, mode = ThemeMode.LIGHT)
+    @Test fun t26_mediaLight() = screen("26-midia-claro.png", Screen.MEDIA, mode = ThemeMode.LIGHT)
 
     @Test fun t01_logo() = shoot("01-logo.png") {
         BootSplash(LogoKind.DEFAULT, container.logo.file, 0, 60, onFinished = {})
