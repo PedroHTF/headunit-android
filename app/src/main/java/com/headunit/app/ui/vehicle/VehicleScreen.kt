@@ -74,12 +74,28 @@ fun VehicleScreen(container: AppContainer) {
 
         Card(Modifier.weight(1.4f).fillMaxHeight()) {
             if (hal.isSimulated) {
+                PhoneSimulator(container)
+                Spacer(Modifier.height(8.dp))
                 SimulatorPanel(container.simulatedVehicle, state.ignition, state.gear, state.speedKmh, state.steeringWheelDeg)
             } else {
                 Text("Simulador desativado", style = MaterialTheme.typography.titleLarge)
                 Text("Os dados vêm do Android Automotive. Ative \"Forçar simulador\" para controlar por aqui.")
             }
         }
+    }
+}
+
+@Composable
+private fun PhoneSimulator(container: AppContainer) {
+    val phone by container.phone.state.collectAsStateWithLifecycle()
+    Text("Telefone (Bluetooth)", style = MaterialTheme.typography.labelLarge)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+        Switch(checked = phone.connected, onCheckedChange = container.phone::setConnected)
+        FilledTonalButton(
+            onClick = { container.phone.simulateIncoming("+55 11 98765-4321") },
+            enabled = phone.connected && !phone.inCall,
+        ) { Text("Receber ligação") }
+        FilledTonalButton(onClick = container.phone::simulateRemoteHangup, enabled = phone.inCall) { Text("Outro lado desliga") }
     }
 }
 

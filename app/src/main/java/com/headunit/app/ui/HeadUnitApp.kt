@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -38,7 +39,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.headunit.app.AppContainer
 import com.headunit.app.logo.BootSplash
 import com.headunit.app.ui.apps.AppsScreen
+import com.headunit.app.ui.audio.EqualizerScreen
 import com.headunit.app.ui.camera.CameraSetupScreen
+import com.headunit.app.ui.phone.CallOverlay
+import com.headunit.app.ui.phone.PhoneScreen
 import com.headunit.app.ui.common.ConnectBanner
 import com.headunit.app.ui.camera.PowerOffOverlay
 import com.headunit.app.ui.camera.ReverseCameraOverlay
@@ -57,6 +61,7 @@ enum class Screen(val label: String, val icon: ImageVector) {
     HOME("Início", Icons.Filled.Home),
     MEDIA("Mídia", Icons.Filled.LibraryMusic),
     RADIO("Rádio", Icons.Filled.Radio),
+    PHONE("Telefone", Icons.Filled.Phone),
     VEHICLE("Veículo", Icons.Filled.DirectionsCar),
     APPS("Apps", Icons.Filled.Apps),
     SETTINGS("Config.", Icons.Filled.Settings),
@@ -69,6 +74,7 @@ fun HeadUnitApp(
     showSplashOnStart: Boolean = true,
     openCameraSetup: Boolean = false,
     initialMediaTab: Int = 0,
+    openEqualizer: Boolean = false,
 ) {
     val vehicle by container.vehicleState.collectAsStateWithLifecycle()
     val hal by container.vehicleHal.collectAsStateWithLifecycle()
@@ -76,6 +82,8 @@ fun HeadUnitApp(
     val camera by container.camera.config.collectAsStateWithLifecycle()
     var screen by rememberSaveable { mutableStateOf(initialScreen) }
     var cameraSetup by rememberSaveable { mutableStateOf(openCameraSetup) }
+    var equalizerOpen by rememberSaveable { mutableStateOf(openEqualizer) }
+    val phoneState by container.phone.state.collectAsStateWithLifecycle()
     // Logo: ao abrir o app e, se configurado, toda vez que a ignição liga.
     var splash by rememberSaveable { mutableStateOf(showSplashOnStart) }
     var wasPowered by rememberSaveable { mutableStateOf(vehicle.ignition.isPowered) }
@@ -112,12 +120,14 @@ fun HeadUnitApp(
                             onPlaybackStarted = container::onMediaStarted,
                         )
                         Screen.RADIO -> RadioScreen(container.radio, onPowerOn = container::onRadioStarted)
+                        Screen.PHONE -> PhoneScreen(container.phone)
                         Screen.VEHICLE -> VehicleScreen(container)
                         Screen.APPS -> AppsScreen()
                         Screen.SETTINGS -> SettingsScreen(
                             container,
                             onOpenCameraSetup = { cameraSetup = true },
                             onPreviewLogo = { splash = true },
+                            onOpenEqualizer = { equalizerOpen = true },
                         )
                     }
                 }
@@ -132,6 +142,14 @@ fun HeadUnitApp(
                 onDismiss = container::dismissSuggestion,
                 modifier = Modifier.align(Alignment.TopCenter),
             )
+        }
+
+        if (equalizerOpen) {
+            EqualizerScreen(container.equalizer, onClose = { equalizerOpen = false })
+        }
+        // Ligação: por cima das telas, abaixo da câmera de ré.
+        if (phoneState.inCall && !DrivingRules.shouldShowReverseCamera(vehicle)) {
+            CallOverlay(container.phone)
         }
 
         if (cameraSetup) {

@@ -90,6 +90,22 @@ class ScreenshotsTest {
             HeadUnitApp(container, initialScreen = s, showSplashOnStart = false, initialMediaTab = tab)
         }
 
+    // ---- Telefone e áudio
+    @Test fun t30_phone() = screen("30-telefone.png", Screen.PHONE)
+    @Test fun t31_incoming() {
+        container.phone.simulateIncoming("+55 11 98765-4321")
+        screen("31-chamada-recebida.png", Screen.HOME)
+    }
+    @Test fun t32_active() {
+        container.phone.simulateIncoming("+55 11 98765-4321")
+        container.phone.accept()
+        screen("32-chamada-ativa.png", Screen.HOME)
+    }
+    @Test fun t33_equalizer() {
+        container.equalizer.update { it.withPreset("Rock") }
+        shoot("33-equalizador.png") { HeadUnitApp(container, showSplashOnStart = false, openEqualizer = true) }
+    }
+
     // ---- Temas
     @Test fun t20_homeLight() = screen("20-inicio-claro.png", Screen.HOME, mode = ThemeMode.LIGHT)
     @Test fun t21_homeDarkHc() = screen("21-inicio-escuro-alto-contraste.png", Screen.HOME, hc = true)

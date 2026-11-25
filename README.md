@@ -29,7 +29,8 @@ próprio com mídia USB, rádio e integração com os dados do carro. Roda em:
 | Abrir Android Auto/CarPlay sozinho ao conectar o celular no Bluetooth | ✅ só na 1ª conexão da viagem; depois, aviso com botão |
 | Configurações (vídeo em qualquer velocidade, projeção, Bluetooth) | ✅ |
 | Abrir outros apps | ✅ tela "Apps" |
-| Bluetooth (chamadas, agenda) | ⏳ próximos passos |
+| **Telefone** (agenda, recentes, teclado, chamada recebida/ativa, botão do volante) | 🟡 simulado; na central virá do serviço Bluetooth do fabricante |
+| **Equalizador** 10 bandas, predefinições, loudness (balanço/fader no DSP) | ✅ aplicado às músicas/vídeos do app (efeitos do Android) |
 
 ## Como rodar
 

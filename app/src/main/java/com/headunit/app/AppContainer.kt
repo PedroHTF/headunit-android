@@ -10,6 +10,9 @@ import com.headunit.app.projection.BtDevice
 import com.headunit.app.projection.ConnectAction
 import com.headunit.app.projection.ProjectionLauncher
 import com.headunit.app.settings.CameraConfigRepository
+import com.headunit.app.settings.EqualizerRepository
+import com.headunit.core.hal.phone.CallState
+import com.headunit.core.hal.phone.SimulatedPhoneHal
 import com.headunit.app.settings.ProjectionMode
 import com.headunit.app.settings.SettingsRepository
 import com.headunit.core.hal.radio.RadioHal
@@ -71,6 +74,8 @@ class AppContainer(
 
     val settings = SettingsRepository(context)
     val camera = CameraConfigRepository(context)
+    val equalizer = EqualizerRepository(context)
+    val phone = SimulatedPhoneHal(scope)
     val logo = LogoRepository(context, settings)
     val projection = ProjectionLauncher(context, settings)
     private val autoLaunch = AutoLaunchPolicy()
@@ -95,6 +100,25 @@ class AppContainer(
 
         // Botões do volante vindos da HAL (simulador ou, no futuro, o MCU).
         scope.launch { _vehicleHal.flatMapLatest { it.keys }.collect(::handleSteeringKey) }
+
+        // Ligação: silencia mídia e rádio; no fim, volta ao que estava tocando.
+        scope.launch {
+            var resumeMedia = false
+            var resumeRadio = false
+            phone.state.map { it.inCall }.distinctUntilChanged().collect { inCall ->
+                if (inCall) {
+                    resumeMedia = player.nowPlaying.value.isPlaying
+                    resumeRadio = radio.state.value.isOn
+                    player.pause()
+                    radio.powerOff()
+                } else {
+                    if (resumeMedia) player.togglePlayPause()
+                    if (resumeRadio) radio.powerOn()
+                    resumeMedia = false
+                    resumeRadio = false
+                }
+            }
+        }
 
         // ACC desligado: para tudo, como uma central de verdade.
         scope.launch {
@@ -185,6 +209,11 @@ class AppContainer(
             SteeringKey.VOLUME_UP -> adjustVolume(AudioManager.ADJUST_RAISE)
             SteeringKey.VOLUME_DOWN -> adjustVolume(AudioManager.ADJUST_LOWER)
             SteeringKey.MUTE -> adjustVolume(AudioManager.ADJUST_TOGGLE_MUTE)
+            SteeringKey.PHONE -> when (phone.state.value.callState) { // atende ou desliga
+                CallState.INCOMING -> phone.accept()
+                CallState.IDLE -> Unit
+                else -> phone.hangup()
+            }
             SteeringKey.MODE -> if (radioActive) {
                 radio.powerOff()
                 _audioSource.value = AudioSource.MEDIA

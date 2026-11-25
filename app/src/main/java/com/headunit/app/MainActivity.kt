@@ -82,6 +82,8 @@ class MainActivity : ComponentActivity() {
             KeyEvent.KEYCODE_VOLUME_UP to SteeringKey.VOLUME_UP,
             KeyEvent.KEYCODE_VOLUME_DOWN to SteeringKey.VOLUME_DOWN,
             KeyEvent.KEYCODE_VOLUME_MUTE to SteeringKey.MUTE,
+            KeyEvent.KEYCODE_CALL to SteeringKey.PHONE,
+            KeyEvent.KEYCODE_ENDCALL to SteeringKey.PHONE,
         )
     }
 }

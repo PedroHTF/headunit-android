@@ -58,7 +58,12 @@ import com.headunit.app.settings.LaunchTarget
 import com.headunit.app.settings.ProjectionMode
 
 @Composable
-fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit, onPreviewLogo: () -> Unit) {
+fun SettingsScreen(
+    container: AppContainer,
+    onOpenCameraSetup: () -> Unit,
+    onPreviewLogo: () -> Unit,
+    onOpenEqualizer: () -> Unit = {},
+) {
     val settings by container.settings.settings.collectAsStateWithLifecycle()
     val connected by container.bluetooth.connected.collectAsStateWithLifecycle()
     var btGranted by remember { mutableStateOf(container.bluetooth.hasPermission()) }
@@ -96,6 +101,17 @@ fun SettingsScreen(container: AppContainer, onOpenCameraSetup: () -> Unit, onPre
                 checked = settings.highContrast,
                 onChange = { v -> container.settings.update { it.copy(highContrast = v) } },
             )
+        }
+
+        Section("Áudio") {
+            val eq by container.equalizer.settings.collectAsStateWithLifecycle()
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Equalizador de 10 bandas, balanço, fader e loudness. Atual: ${eq.preset}.",
+                    style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f),
+                )
+                Button(onClick = onOpenEqualizer) { Text("Equalizador") }
+            }
         }
 
         Section("Vídeo") {

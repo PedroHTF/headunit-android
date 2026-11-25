@@ -54,7 +54,7 @@ fun HomeScreen(container: AppContainer, onNavigate: (Screen) -> Unit) {
                     container.openProjection(ProjectionMode.CARPLAY)
                 }
             }
-            listOf(Screen.MEDIA to Screen.RADIO, Screen.APPS to Screen.SETTINGS).forEach { (a, b) ->
+            listOf(Screen.MEDIA to Screen.RADIO, Screen.PHONE to Screen.SETTINGS).forEach { (a, b) ->
                 Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Tile(a.label, a.icon, Modifier.weight(1f).fillMaxHeight()) { onNavigate(a) }
                     Tile(b.label, b.icon, Modifier.weight(1f).fillMaxHeight()) { onNavigate(b) }

@@ -30,6 +30,7 @@ enum class SteeringKey(val label: String) {
     VOLUME_UP("Vol +"),
     MUTE("Mudo"),
     MODE("Fonte"),
+    PHONE("Telefone"),
 }
 
 data class VehicleState(
