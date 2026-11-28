@@ -1,7 +1,7 @@
 # CLAUDE.md — headunit-android
 
-Launcher para central multimídia automotiva (uso pessoal: Honda HR-V, central genérica
-Android com Zlink). Kotlin + Jetpack Compose, roda em Android comum, tablet, centrais
+Launcher para central multimídia automotiva (uso pessoal: Honda HR-V, central H-Tech
+HT-9864CA: Android, Unisoc UIS8581A, Zlink; ver `docs/memoria.md`). Kotlin + Jetpack Compose, roda em Android comum, tablet, centrais
 genéricas e Android Automotive (AAOS). Projeto irmão: `PedroHTF/headunit-linux` (Qt/QML).
 
 
@@ -77,5 +77,6 @@ escolhido nas Configurações. Abertura automática só na 1ª conexão Bluetoot
 
 - Telefone real: serviço Bluetooth do fabricante da central (hoje simulado).
 - MCU (ACC, ré, volante, CAN), rádio real, câmera real e nome exato do pacote do Zlink:
-  dependem dos dados da central (modelo, CPU, versão do Android, `adb shell pm list packages`).
+  central é a H-Tech HT-9864CA (UIS8581A); falta confirmar no aparelho a resolução (1280×720 ou
+  1280×800?), a versão real do Android, o MCU e `adb shell pm list packages`.
 - Redesenho do layout a partir do Figma do dono (1024×600; claro, escuro, alto contraste).
