@@ -4,6 +4,10 @@ Launcher para central multimídia automotiva (uso pessoal: Honda HR-V, central g
 Android com Zlink). Kotlin + Jetpack Compose, roda em Android comum, tablet, centrais
 genéricas e Android Automotive (AAOS). Projeto irmão: `PedroHTF/headunit-linux` (Qt/QML).
 
+
+> **Comece lendo `docs/memoria.md`** (estado do projeto, histórico de sessões, próximos passos)
+> e atualize-o ao fim de cada sessão.
+
 ## Regras de trabalho
 
 - **Sempre em português (pt-BR):** conversa, textos da interface, comentários, commits e docs.
